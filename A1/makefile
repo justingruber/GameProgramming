@@ -1,0 +1,8 @@
+
+#-F/System/Library/Frameworks -framework OpenGL -framework GLUT
+
+INCLUDES = -I/usr/include/GL/ -lGL -lGLU -lglut -lm
+
+a1: a1.c graphics.c visible.c graphics.h
+	gcc a1.c graphics.c visible.c -o a1 $(INCLUDES) 
+
