@@ -74,8 +74,36 @@ extern void tree(float, float, float, float, float, float, int);
 	/* note that the world coordinates returned from getViewPosition()
 	   will be the negative value of the array indices */
 void collisionResponse() {
-
 	/* your collision code goes here */
+   float currx = 0, curry = 0, currz = 0;
+   float prevx = 0, prevy = 0, prevz = 0;
+
+   getViewPosition(&currx, &curry, &currz);
+   
+   #ifdef debug
+   fprintf(stderr, "Current position in the world: x: %d, y: %d, z: %d\n", (int)abs(currx), (int)abs(curry), (int)abs(currz));
+   fprintf(stderr, "Cube ID: %d\n", world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]);
+   #endif
+
+   switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
+      case 0:
+         break;
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+         #ifdef debug
+         fprintf(stderr, "Collision detected.\n");
+         #endif
+         getOldViewPosition(&prevx, &prevy, &prevz);
+         setViewPosition(prevx, prevy, prevz);
+         break;
+   }
+   return;
 
 }
 
