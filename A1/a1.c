@@ -65,6 +65,9 @@ extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
 
 /********* end of extern variable declarations **************/
+float perlinNoise();
+float noise();
+float interpolate();
 
 
 	/*** collisionResponse() ***/
@@ -175,6 +178,44 @@ float *la;
 
 
 
+
+float perlinNoise(){
+   float amplitude = 1.0;
+   float octaves = 3.0;
+   float frequency = 1.75;
+
+   int i = 0, j = 0;
+
+   // for(i = 0; i < x; i++){
+   //    for (j = 0; j < y; j++){
+   //       octaveArray[i][j] = 0;
+   //    }
+   // }
+   noise();
+}
+
+
+float noise(){
+   srand(SEED);
+   
+   float octaveArray[WORLDX][WORLDY];
+   int i,j;
+
+   for(i = 0; i < WORLDX; i++){
+      for (j = 0; j < WORLDY; j++){
+         octaveArray[i][j] = (float)rand() / (float)RAND_MAX * 2 - 1;
+         #ifdef debug
+         printf("%f", (float)rand() / (float)RAND_MAX * 2 - 1);
+         #endif
+      }
+      #ifdef debug
+      printf("\n");
+      #endif
+   } 
+
+}
+
+
 int main(int argc, char** argv)
 {
 int i, j, k;
@@ -229,6 +270,8 @@ int i, j, k;
    } else {
 
 	/* your code to build the world goes here */
+      perlinNoise();
+
 
    }
 

@@ -12,4 +12,6 @@ GLubyte  world[WORLDX][WORLDY][WORLDZ];
 #define MAX_DISPLAY_LIST 500000
 
 //Uncomment this to enable debug information
-// #define debug
+#define debug
+
+#define SEED 2949873429
