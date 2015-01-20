@@ -66,8 +66,8 @@ extern void tree(float, float, float, float, float, float, int);
 
 /********* end of extern variable declarations **************/
 float perlinNoise();
-float noise();
-float interpolate();
+float *** noise();
+float interpolate(float *);
 
 
 	/*** collisionResponse() ***/
@@ -177,43 +177,128 @@ float *la;
 }
 
 
+float noise(int x, int y){
 
+   int n = x + y * 57;
+   n = (n<<13) ^ n;
+   return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 7fffffff) / 107374182.0)
+}
 
-float perlinNoise(){
-   float amplitude = 1.0;
-   float octaves = 3.0;
-   float frequency = 1.75;
+float smoothedNoise(float x, float y){
 
-   int i = 0, j = 0;
+   corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
+   sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
+   center = noise(x, y) / 4;
+   return corners + sides + center;
+}
 
-   // for(i = 0; i < x; i++){
-   //    for (j = 0; j < y; j++){
-   //       octaveArray[i][j] = 0;
-   //    }
-   // }
-   noise();
+float interpolate(float x, float y){
+
+   int wholeX = (int)x;
+   float remainderX = x - wholeX;
+
+   int wholeY = (int)y;
+   float remainderY = y - wholeY;
+
+   vector1 = smoothedNoise(wholeX, wholeY);
+   vector2 = smoothedNoise(wholeX + 1, wholeY);
+   vector3 = smoothedNoise(wholeX, wholeY + 1);
+   vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
+
+   int interpolate1 = (v1, v2, remainderX);
+   int interpolate2 = (v3, v4, remainderY);
 }
 
 
-float noise(){
-   srand(SEED);
+int interpolate(int a, int b, float x){
    
-   float octaveArray[WORLDX][WORLDY];
-   int i,j;
+   ft = x * 3.1415927;
+   f = (1 - cos(ft)) * .5;
+   return  a*(1-f) + b*f;
+}
 
-   for(i = 0; i < WORLDX; i++){
-      for (j = 0; j < WORLDY; j++){
-         octaveArray[i][j] = (float)rand() / (float)RAND_MAX * 2 - 1;
-         #ifdef debug
-         printf("%f", (float)rand() / (float)RAND_MAX * 2 - 1);
-         #endif
-      }
-      #ifdef debug
-      printf("\n");
-      #endif
-   } 
+int perlinNoise(float x, float y){
+
+
+
+   int total = 0;
+   int persistence = 1;
+   int octaves = 8;
+   int divAmplititude = {1, 4, 16, 64, 256, 1024};
+
+   for(int i = 0, i < octaves; i++){
+      
+   }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// float perlinNoise(){
+//    float amplitude = 1.0;
+//    float octaves = 3.0;
+//    float frequency = 1.75;
+//    float ***octaveArray[(int)octaves];
+//    int i,j,k;
+   
+
+//    for(i = 0; i < 4; i++){
+//       octaveArray[i] = noise();
+//    }
+//    //interpolate(*octaveArray);
+   
+
+// }
+
+
+// float *** noise(){
+//    srand(SEED);
+   
+//    static float octave[WORLDX][WORLDY][WORLDZ - 1];
+//    int i,j,k;
+//    for(i = 0; i < WORLDX; i++){
+//       for (j = 0; j < WORLDY; j++){
+//          for(k = 0; k < WORLDZ - 1; k++){
+//             octave[i][j][k] = (float)rand() / (float)RAND_MAX * 2 - 1;
+//             #ifdef debugMapGen
+//             printf("%f ", octave[i][j][k]);
+//             #endif
+//          }
+//          #ifdef debugMapGen
+//          printf("\n");
+//          #endif
+//       }
+//    } 
+//    return octave;
+// }
+
+
+// float interpolate(float *octaveArray){
+//    int i,j,k;
+
+//    for(i = 0; i < WORLDX; i++){
+//       for (j = 0; j < WORLDY; j++){
+//          for(k = 0; k < WORLDZ - 1; k++){
+//             // *octaveArray[i][j][k] = 0;
+//          }
+//       }
+//    } 
+
+//    return;
+// }
+
+
 
 
 int main(int argc, char** argv)
