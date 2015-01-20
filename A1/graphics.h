@@ -1,7 +1,14 @@
+// For Mac
+// #include <OpenGL/gl.h>
+// #include <OpenGL/glu.h>
+// #include <GLUT/glut.h>
 
+//For Linux
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+
+
 
         /* world size and storage array */
 #define WORLDX 100

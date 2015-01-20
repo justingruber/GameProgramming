@@ -65,9 +65,9 @@ extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
 
 /********* end of extern variable declarations **************/
-float perlinNoise();
-float *** noise();
-float interpolate(float *);
+// float perlinNoise();
+// float *** noise();
+// float interpolate(float *);
 
 
 	/*** collisionResponse() ***/
@@ -181,18 +181,18 @@ float noise(int x, int y){
 
    int n = x + y * 57;
    n = (n<<13) ^ n;
-   return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 7fffffff) / 107374182.0)
+   return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589)) / 107374182.0);
 }
 
 float smoothedNoise(float x, float y){
 
-   corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
-   sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
-   center = noise(x, y) / 4;
+   float corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
+   float sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
+   float center = noise(x, y) / 4;
    return corners + sides + center;
 }
 
-float interpolate(float x, float y){
+float interpolatedNoise(float x, float y){
 
    int wholeX = (int)x;
    float remainderX = x - wholeX;
@@ -200,49 +200,37 @@ float interpolate(float x, float y){
    int wholeY = (int)y;
    float remainderY = y - wholeY;
 
-   vector1 = smoothedNoise(wholeX, wholeY);
-   vector2 = smoothedNoise(wholeX + 1, wholeY);
-   vector3 = smoothedNoise(wholeX, wholeY + 1);
-   vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
+   float vector1 = smoothedNoise(wholeX, wholeY);
+   float vector2 = smoothedNoise(wholeX + 1, wholeY);
+   float vector3 = smoothedNoise(wholeX, wholeY + 1);
+   float vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
 
-   int interpolate1 = (v1, v2, remainderX);
-   int interpolate2 = (v3, v4, remainderY);
+   int interpolate1 = (vector1, vector2, remainderX);
+   int interpolate2 = (vector3, vector4, remainderY);
 }
 
 
 int interpolate(int a, int b, float x){
    
-   ft = x * 3.1415927;
-   f = (1 - cos(ft)) * .5;
+   float ft = x * 3.1415927;
+   float f = (1 - cos(ft)) * .5;
    return  a*(1-f) + b*f;
 }
 
 int perlinNoise(float x, float y){
 
 
-
+   int i = 0;
    int total = 0;
    int persistence = 1;
    int octaves = 8;
-   int divAmplititude = {1, 4, 16, 64, 256, 1024};
+   int divAmplititude[6] = {1, 4, 16, 64, 256, 1024};
 
-   for(int i = 0, i < octaves; i++){
+   for(i = 0; i < octaves; i++){
       
    }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // float perlinNoise(){
@@ -355,7 +343,7 @@ int i, j, k;
    } else {
 
 	/* your code to build the world goes here */
-      perlinNoise();
+      // perlinNoise();
 
 
    }
