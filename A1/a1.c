@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "graphics.h"
 
@@ -68,6 +69,9 @@ extern void tree(float, float, float, float, float, float, int);
 // float perlinNoise();
 // float *** noise();
 // float interpolate(float *);
+void gravity(int);
+int interpolate(int, int, float);
+
 
 
 	/*** collisionResponse() ***/
@@ -80,12 +84,16 @@ void collisionResponse() {
 	/* your collision code goes here */
    float currx = 0, curry = 0, currz = 0;
    float prevx = 0, prevy = 0, prevz = 0;
-
+   float xaxis;
+   float yaxis;
+   float zaxis;
    getViewPosition(&currx, &curry, &currz);
    
-   #ifdef debug
+   #ifdef debugCollision
    fprintf(stderr, "Current position in the world: x: %d, y: %d, z: %d\n", (int)abs(currx), (int)abs(curry), (int)abs(currz));
    fprintf(stderr, "Cube ID: %d\n", world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]);
+   getViewOrientation(&xaxis, &yaxis, &zaxis);
+   printf("xaxis: %d, yaxis: %d, zaxis: %f\n", (int)xaxis % 360, (int)yaxis % 360, zaxis);
    #endif
 
    switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
@@ -99,11 +107,12 @@ void collisionResponse() {
       case 6:
       case 7:
       case 8:
-         #ifdef debug
+         #ifdef debugCollision
          fprintf(stderr, "Collision detected.\n");
          #endif
+
          getOldViewPosition(&prevx, &prevy, &prevz);
-         setViewPosition(prevx, prevy, prevz);
+         setViewPosition(prevx, prevy, prevz);  
          break;
    }
    return;
@@ -170,11 +179,28 @@ float *la;
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
    } else {
-
 	/* your code goes here */
 
    }
 }
+
+void gravity(int diff){
+
+
+   // time_t currTime = 0;
+   // time_t newTime;
+   // time(&newTime);
+   // // printf("%d\n", difftime(currTime, (newTime = time(0))) >= 1.0);
+   // if(newTime > currTime){
+   //    printf("CurrTime: %s, newTime: %s",ctime(&currTime), ctime(&newTime));
+   //    currTime = newTime;
+   // }
+
+
+   glutTimerFunc(diff, gravity, diff);
+   // exit(0);
+}
+
 
 
 float noise(int x, int y){
@@ -193,20 +219,26 @@ float smoothedNoise(float x, float y){
 }
 
 float interpolatedNoise(float x, float y){
-
+   printf("x: %f, y: %f\n", x,y);
+   
    int wholeX = (int)x;
    float remainderX = x - wholeX;
+   printf("wholeX: %d, remainderX: %f\n", wholeX,remainderX);
+
 
    int wholeY = (int)y;
    float remainderY = y - wholeY;
+   printf("wholeY: %d, remainderY: %f\n", wholeY,remainderY);
+
 
    float vector1 = smoothedNoise(wholeX, wholeY);
    float vector2 = smoothedNoise(wholeX + 1, wholeY);
    float vector3 = smoothedNoise(wholeX, wholeY + 1);
    float vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
 
-   int interpolate1 = (vector1, vector2, remainderX);
-   int interpolate2 = (vector3, vector4, remainderY);
+   int i1 = (vector1, vector2, remainderX);
+   int i2 = (vector3, vector4, remainderY);
+   return interpolate(i1,i2, remainderY);
 }
 
 
@@ -219,19 +251,68 @@ int interpolate(int a, int b, float x){
 
 int perlinNoise(float x, float y){
 
-
    int i = 0;
-   int total = 0;
+   float total = 0;
    int persistence = 1;
-   int octaves = 8;
-   int divAmplititude[6] = {1, 4, 16, 64, 256, 1024};
+   int octaves = 5;
+   float divAmplititude[6] = {1.0, 4.0, 16.0, 64.0, 256.0};
+   float frequency[6] = {1.0,2.0,4.0,8.0,16.0};
 
    for(i = 0; i < octaves; i++){
-      
+      total = total + interpolatedNoise(x * frequency[i], y * frequency[i]) * (1/divAmplititude[i]);
+      // printf("total: %f\n", total);
    }
 
+   return total;
 }
 
+
+void genWorld(){
+   srand(SEED);
+   int i,j,k;
+   float n = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
+   float m = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
+
+   // printf("n: %f, m: %f\n", n,m);
+   for(i=0; i<WORLDX; i++)
+      for(j=0; j<WORLDY; j++)
+         for(k=0; k<WORLDZ; k++)
+            world[i][j][k] = 0;
+
+   for(i=0; i<WORLDX; i++) {
+      for(j=0; j<WORLDZ; j++) {
+         float tmp = perlinNoise(m,n);
+         printf("tmp: %f\n", tmp );
+         exit(0);
+         world[i][(int)tmp][j] = 1;
+         // world[i][5][j] = 3;
+         // world[i][6][j] = 3;
+         // world[i][7][j] = 3;
+      }
+   }
+
+
+   // for(i=0; i<WORLDX; i++) {
+   //    for(j=0; j<WORLDZ; j++) {
+   //       world[i][perlinNoise(n,m)][j] = 3;
+   //       n += 1.0;
+   //       m += 1.0;
+   //    }
+   // }
+
+
+      // for(i = 0; i < WORLDX; i++){
+      //    for (j = 0; j < WORLDY; j++){
+      //       printf("val: %d", perlinNoise(n,m));
+      //       n += 1.0;
+      //       m += 1.0;
+      //       // for(k = 0; k < WORLDZ - 1; k++){
+      //       //    octaveArray[i][j][k] = ;
+      //       // }
+      //    }
+      // } 
+
+}
 
 // float perlinNoise(){
 //    float amplitude = 1.0;
@@ -343,10 +424,11 @@ int i, j, k;
    } else {
 
 	/* your code to build the world goes here */
-      // perlinNoise();
+      genWorld();
 
 
    }
+      gravity(SECOND);
 
 
 	/* starts the graphics processing loop */

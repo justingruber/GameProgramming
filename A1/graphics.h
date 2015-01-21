@@ -20,5 +20,7 @@ GLubyte  world[WORLDX][WORLDY][WORLDZ];
 
 //Uncomment this to enable debug information
 // #define debugMapGen
+// #define debugCollision
 
 #define SEED 2949873429
+#define SECOND 1000
