@@ -1,12 +1,12 @@
 // For Mac
-// #include <OpenGL/gl.h>
-// #include <OpenGL/glu.h>
-// #include <GLUT/glut.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
 
 //For Linux
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
+// #include <GL/gl.h>
+// #include <GL/glu.h>
+// #include <GL/glut.h>
 
 
 
@@ -22,5 +22,5 @@ GLubyte  world[WORLDX][WORLDY][WORLDZ];
 // #define debugMapGen
 // #define debugCollision
 
-#define SEED 2949873429
+#define SEED 1131992
 #define SECOND 1000

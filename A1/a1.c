@@ -66,12 +66,12 @@ extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
 
 /********* end of extern variable declarations **************/
-// float perlinNoise();
-// float *** noise();
-// float interpolate(float *);
-void gravity(int);
-int interpolate(int, int, float);
 
+
+
+float gradient[WORLDX][WORLDY][WORLDZ];
+void gravity(int);
+void fillGradient();
 
 
 	/*** collisionResponse() ***/
@@ -203,75 +203,152 @@ void gravity(int diff){
 
 
 
-float noise(int x, int y){
-
-   int n = x + y * 57;
-   n = (n<<13) ^ n;
-   return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589)) / 107374182.0);
-}
-
-float smoothedNoise(float x, float y){
-
-   float corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
-   float sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
-   float center = noise(x, y) / 4;
-   return corners + sides + center;
-}
-
-float interpolatedNoise(float x, float y){
-   printf("x: %f, y: %f\n", x,y);
+void fillGradient(){
    
-   int wholeX = (int)x;
-   float remainderX = x - wholeX;
-   printf("wholeX: %d, remainderX: %f\n", wholeX,remainderX);
+   srand(SEED);
 
+   int i,j,k; 
+   int min = -1;
+   int max = 1;
+   // printf("Here %f\n", -1+2*((float)rand())/RAND_MAX);
+   // exit(0);
 
-   int wholeY = (int)y;
-   float remainderY = y - wholeY;
-   printf("wholeY: %d, remainderY: %f\n", wholeY,remainderY);
+    ;
 
-
-   float vector1 = smoothedNoise(wholeX, wholeY);
-   float vector2 = smoothedNoise(wholeX + 1, wholeY);
-   float vector3 = smoothedNoise(wholeX, wholeY + 1);
-   float vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
-
-   int i1 = (vector1, vector2, remainderX);
-   int i2 = (vector3, vector4, remainderY);
-   return interpolate(i1,i2, remainderY);
-}
-
-
-int interpolate(int a, int b, float x){
-   
-   float ft = x * 3.1415927;
-   float f = (1 - cos(ft)) * .5;
-   return  a*(1-f) + b*f;
-}
-
-int perlinNoise(float x, float y){
-
-   int i = 0;
-   float total = 0;
-   int persistence = 1;
-   int octaves = 5;
-   float divAmplititude[6] = {1.0, 4.0, 16.0, 64.0, 256.0};
-   float frequency[6] = {1.0,2.0,4.0,8.0,16.0};
-
-   for(i = 0; i < octaves; i++){
-      total = total + interpolatedNoise(x * frequency[i], y * frequency[i]) * (1/divAmplititude[i]);
-      // printf("total: %f\n", total);
+   for(i = 0; i < WORLDX; i++){
+      for(j = 0; j < WORLDY; j++){
+         for(k = 0; k < WORLDZ; k++){
+            gradient[i][j][k] =  -1+2*((float)rand())/RAND_MAX;
+            // printf("%f, ", gradient[i][j][k]);
+         }
+         // printf("\n");
+      }
    }
-
-   return total;
 }
+
+
+float lerp(float a0, float a1, float weight){
+   return (1.0 - weight) * a0 + weight * a1;
+}
+
+float dotGridGradient(int ix, int iz, float x, float y){
+
+
+   // world[WORLDX][2][WORLDZ];
+
+   float dx = x - (double)ix;
+   float dz = y - (double)iz;
+
+   return (dx * gradient[ix][0][iz] + dz * gradient[ix][1][iz]);
+}
+
+float perlin(float x, float y){
+
+     int x0 = (x > 0.0 ? (int)x : (int)x - 1);
+     int x1 = x0 + 1;
+     int y0 = (y > 0.0 ? (int)y : (int)y - 1);
+     int y1 = y0 + 1;
+
+     // printf("x: %f, y: %f, x0: %d, x1: %d, y0: %d, y1: %d\n", x,y,x0,x1,y0,y1);
+ 
+     // Determine interpolation weights
+     // Could also use higher order polynomial/s-curve here
+     float sx = x - (double)x0;
+     float sy = y - (double)y0;
+ 
+     // Interpolate between grid point gradients
+     float n0, n1, ix0, ix1, value;
+     n0 = dotGridGradient(x0, y0, x, y);
+     n1 = dotGridGradient(x1, y0, x, y);
+     ix0 = lerp(n0, n1, sx);
+     printf("n0: %f, n1: %f, ix0: %f\n", n0, n1, ix0);
+     n0 = dotGridGradient(x0, y1, x, y);
+     n1 = dotGridGradient(x1, y1, x, y);
+     ix1 = lerp(n0, n1, sx);
+     printf("n0: %f, n1: %f, ix1: %f\n", n0, n1, ix1);
+
+     value = lerp(ix0, ix1, sy);
+     printf("value: %f\n", value);
+
+
+
+
+
+     return value;
+
+}
+
+
+
+// float noise(int x, int y){
+
+//    int n = x + y * 57;
+//    n = (n<<13) ^ n;
+//    return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589)) / 107374182.0);
+// }
+
+// float smoothedNoise(float x, float y){
+
+//    float corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
+//    float sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
+//    float center = noise(x, y) / 4;
+//    return corners + sides + center;
+// }
+
+// float interpolatedNoise(float x, float y){
+//    printf("x: %f, y: %f\n", x,y);
+   
+//    int wholeX = (int)x;
+//    float remainderX = x - wholeX;
+//    printf("wholeX: %d, remainderX: %f\n", wholeX,remainderX);
+
+
+//    int wholeY = (int)y;
+//    float remainderY = y - wholeY;
+//    printf("wholeY: %d, remainderY: %f\n", wholeY,remainderY);
+
+
+//    float vector1 = smoothedNoise(wholeX, wholeY);
+//    float vector2 = smoothedNoise(wholeX + 1, wholeY);
+//    float vector3 = smoothedNoise(wholeX, wholeY + 1);
+//    float vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
+
+//    int i1 = (vector1, vector2, remainderX);
+//    int i2 = (vector3, vector4, remainderY);
+//    return interpolate(i1,i2, remainderY);
+// }
+
+
+// int interpolate(int a, int b, float x){
+   
+//    float ft = x * 3.1415927;
+//    float f = (1 - cos(ft)) * .5;
+//    return  a*(1-f) + b*f;
+// }
+
+// int perlinNoise(float x, float y){
+
+//    int i = 0;
+//    float total = 0;
+//    int persistence = 1;
+//    int octaves = 5;
+//    float divAmplititude[6] = {1.0, 4.0, 16.0, 64.0, 256.0};
+//    float frequency[6] = {1.0,2.0,4.0,8.0,16.0};
+
+//    for(i = 0; i < octaves; i++){
+//       total = total + interpolatedNoise(x * frequency[i], y * frequency[i]) * (1/divAmplititude[i]);
+//       // printf("total: %f\n", total);
+//    }
+
+//    return total;
+// }
 
 
 void genWorld(){
-   srand(SEED);
+   
    int i,j,k;
-   float n = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
-   float m = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
+   // float n = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
+   // float m = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
 
    // printf("n: %f, m: %f\n", n,m);
    for(i=0; i<WORLDX; i++)
@@ -279,16 +356,19 @@ void genWorld(){
          for(k=0; k<WORLDZ; k++)
             world[i][j][k] = 0;
 
+   fillGradient();
+
    for(i=0; i<WORLDX; i++) {
       for(j=0; j<WORLDZ; j++) {
-         float tmp = perlinNoise(m,n);
+         float tmp = perlin((float)i,(float)j);
          printf("tmp: %f\n", tmp );
-         exit(0);
-         world[i][(int)tmp][j] = 1;
+         // exit(0);
+         world[i][(int)tmp][j] = 2;
          // world[i][5][j] = 3;
          // world[i][6][j] = 3;
          // world[i][7][j] = 3;
       }
+      exit(1);
    }
 
 
@@ -313,60 +393,6 @@ void genWorld(){
       // } 
 
 }
-
-// float perlinNoise(){
-//    float amplitude = 1.0;
-//    float octaves = 3.0;
-//    float frequency = 1.75;
-//    float ***octaveArray[(int)octaves];
-//    int i,j,k;
-   
-
-//    for(i = 0; i < 4; i++){
-//       octaveArray[i] = noise();
-//    }
-//    //interpolate(*octaveArray);
-   
-
-// }
-
-
-// float *** noise(){
-//    srand(SEED);
-   
-//    static float octave[WORLDX][WORLDY][WORLDZ - 1];
-//    int i,j,k;
-//    for(i = 0; i < WORLDX; i++){
-//       for (j = 0; j < WORLDY; j++){
-//          for(k = 0; k < WORLDZ - 1; k++){
-//             octave[i][j][k] = (float)rand() / (float)RAND_MAX * 2 - 1;
-//             #ifdef debugMapGen
-//             printf("%f ", octave[i][j][k]);
-//             #endif
-//          }
-//          #ifdef debugMapGen
-//          printf("\n");
-//          #endif
-//       }
-//    } 
-//    return octave;
-// }
-
-
-// float interpolate(float *octaveArray){
-//    int i,j,k;
-
-//    for(i = 0; i < WORLDX; i++){
-//       for (j = 0; j < WORLDY; j++){
-//          for(k = 0; k < WORLDZ - 1; k++){
-//             // *octaveArray[i][j][k] = 0;
-//          }
-//       }
-//    } 
-
-//    return;
-// }
-
 
 
 
