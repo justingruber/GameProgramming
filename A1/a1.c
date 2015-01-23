@@ -61,6 +61,10 @@ extern int netServer;
 	/* frustum corner coordinates, used for visibility determination  */
 extern float corners[4][3];
 
+extern float vpx, vpy, vpz;
+extern float oldvpx, oldvpy, oldvpz;
+
+
 	/* determine which cubes are visible e.g. in view frustum */
 extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
@@ -68,7 +72,7 @@ extern void tree(float, float, float, float, float, float, int);
 /********* end of extern variable declarations **************/
 
 
-
+int hasCollision = 0;
 float gradient[WORLDX][WORLDY][WORLDZ];
 void gravity(int);
 void fillGradient();
@@ -87,8 +91,8 @@ void collisionResponse() {
    float xaxis;
    float yaxis;
    float zaxis;
-   getViewPosition(&currx, &curry, &currz);
-   
+   getViewPosition(&currx, &curry, &currz);      
+
    #ifdef debugCollision
    fprintf(stderr, "Current position in the world: x: %d, y: %d, z: %d\n", (int)abs(currx), (int)abs(curry), (int)abs(currz));
    fprintf(stderr, "Cube ID: %d\n", world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]);
@@ -96,8 +100,10 @@ void collisionResponse() {
    printf("xaxis: %d, yaxis: %d, zaxis: %f\n", (int)xaxis % 360, (int)yaxis % 360, zaxis);
    #endif
 
+
    switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
       case 0:
+      hasCollision = 0;
          break;
       case 1:
       case 2:
@@ -108,11 +114,15 @@ void collisionResponse() {
       case 7:
       case 8:
          #ifdef debugCollision
-         fprintf(stderr, "Collision detected.\n");
+         printf("currx: %f, curry: %f, currz: %f\n", currx, curry, currz);
+         fprintf(stderr, "Collision detected. ceil(y): %f\n\n\n", -1*(ceil(abs(curry) + 1)));
+
+         // exit(1);
          #endif
 
-         getOldViewPosition(&prevx, &prevy, &prevz);
-         setViewPosition(prevx, prevy, prevz);  
+         // getOldViewPosition(&prevx, &prevy, &prevz);
+         setViewPosition(oldvpx, oldvpy, oldvpz);
+         hasCollision = 1;
          break;
    }
    return;
@@ -182,216 +192,125 @@ float *la;
 	/* your code goes here */
 
    }
-}
 
-void gravity(int diff){
-
-
-   // time_t currTime = 0;
-   // time_t newTime;
-   // time(&newTime);
-   // // printf("%d\n", difftime(currTime, (newTime = time(0))) >= 1.0);
-   // if(newTime > currTime){
-   //    printf("CurrTime: %s, newTime: %s",ctime(&currTime), ctime(&newTime));
-   //    currTime = newTime;
-   // }
-
-
-   glutTimerFunc(diff, gravity, diff);
-   // exit(0);
-}
-
-
-
-void fillGradient(){
-   
-   srand(SEED);
-
-   int i,j,k; 
-   int min = -1;
-   int max = 1;
-   // printf("Here %f\n", -1+2*((float)rand())/RAND_MAX);
-   // exit(0);
-
-    ;
-
-   for(i = 0; i < WORLDX; i++){
-      for(j = 0; j < WORLDY; j++){
-         for(k = 0; k < WORLDZ; k++){
-            gradient[i][j][k] =  -1+2*((float)rand())/RAND_MAX;
-            // printf("%f, ", gradient[i][j][k]);
-         }
-         // printf("\n");
+      if(flycontrol == 1 ){
+         float x,y,z;
+         collisionResponse();
+         getViewPosition(&x, &y, &z);
+         // printf("\n\nvpx: %f, vpy: %f, vpz: %f\n", x, y, z);
+         setViewPosition(x, y + 0.5, z);
       }
+}
+
+//Code from initializeTables and Perlin was taken from and modified from
+//http://www.angelcode.com/dev/perlin/perlin.html
+void initializeTables(int SIZE, int * p, float * gradientX, float * gradientY){
+   int i, j;
+   
+
+   // Initialize the permutation table
+   for(i = 0; i < SIZE; i++)
+     p[i] = i;
+
+   for(i = 0; i < SIZE; i++)
+   {
+     j = rand() % SIZE;
+
+     int nSwap = p[i];
+     p[i]  = p[j];
+     p[j]  = nSwap;
    }
-}
-
-
-float lerp(float a0, float a1, float weight){
-   return (1.0 - weight) * a0 + weight * a1;
-}
-
-float dotGridGradient(int ix, int iz, float x, float y){
-
-
-   // world[WORLDX][2][WORLDZ];
-
-   float dx = x - (double)ix;
-   float dz = y - (double)iz;
-
-   return (dx * gradient[ix][0][iz] + dz * gradient[ix][1][iz]);
-}
-
-float perlin(float x, float y){
-
-     int x0 = (x > 0.0 ? (int)x : (int)x - 1);
-     int x1 = x0 + 1;
-     int y0 = (y > 0.0 ? (int)y : (int)y - 1);
-     int y1 = y0 + 1;
-
-     // printf("x: %f, y: %f, x0: %d, x1: %d, y0: %d, y1: %d\n", x,y,x0,x1,y0,y1);
- 
-     // Determine interpolation weights
-     // Could also use higher order polynomial/s-curve here
-     float sx = x - (double)x0;
-     float sy = y - (double)y0;
- 
-     // Interpolate between grid point gradients
-     float n0, n1, ix0, ix1, value;
-     n0 = dotGridGradient(x0, y0, x, y);
-     n1 = dotGridGradient(x1, y0, x, y);
-     ix0 = lerp(n0, n1, sx);
-     printf("n0: %f, n1: %f, ix0: %f\n", n0, n1, ix0);
-     n0 = dotGridGradient(x0, y1, x, y);
-     n1 = dotGridGradient(x1, y1, x, y);
-     ix1 = lerp(n0, n1, sx);
-     printf("n0: %f, n1: %f, ix1: %f\n", n0, n1, ix1);
-
-     value = lerp(ix0, ix1, sy);
-     printf("value: %f\n", value);
-
-
-
-
-
-     return value;
+      
+   // Generate the gradient look-up tables
+   for(i = 0; i < SIZE; i++)
+   {
+     gradientX[i] = (float)(rand())/(RAND_MAX/2) - 1.0f; 
+     gradientY[i] = (float)(rand())/(RAND_MAX/2) - 1.0f;
+   }  
 
 }
 
 
-
-// float noise(int x, int y){
-
-//    int n = x + y * 57;
-//    n = (n<<13) ^ n;
-//    return (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589)) / 107374182.0);
-// }
-
-// float smoothedNoise(float x, float y){
-
-//    float corners = (noise(x-1, y-1) + noise(x+1, y-1) + noise(x-1, y+1) + noise(x+1, y+1)) / 16;
-//    float sides = (noise(x-1, y) + noise(x+1, y) + noise(x, y-1) + noise(x, y+1)) / 8;
-//    float center = noise(x, y) / 4;
-//    return corners + sides + center;
-// }
-
-// float interpolatedNoise(float x, float y){
-//    printf("x: %f, y: %f\n", x,y);
+float perlin(float x, float y, int * p, float * gradientX, float * gradientY, int SIZE){
    
-//    int wholeX = (int)x;
-//    float remainderX = x - wholeX;
-//    printf("wholeX: %d, remainderX: %f\n", wholeX,remainderX);
+   // Compute the integer positions of the four surrounding points
+   int qx0 = (int)floorf(x);
+   int qx1 = qx0 + 1;
 
+   int qy0 = (int)floorf(y);
+   int qy1 = qy0 + 1;
 
-//    int wholeY = (int)y;
-//    float remainderY = y - wholeY;
-//    printf("wholeY: %d, remainderY: %f\n", wholeY,remainderY);
+   // Permutate values to get indices to use with the gradient look-up tables
+   int q00 = p[(qy0 + p[qx0 % SIZE]) % SIZE];
+   int q01 = p[(qy0 + p[qx1 % SIZE]) % SIZE];
 
+   int q10 = p[(qy1 + p[qx0 % SIZE]) % SIZE];
+   int q11 = p[(qy1 + p[qx1 % SIZE]) % SIZE];
 
-//    float vector1 = smoothedNoise(wholeX, wholeY);
-//    float vector2 = smoothedNoise(wholeX + 1, wholeY);
-//    float vector3 = smoothedNoise(wholeX, wholeY + 1);
-//    float vector4 = smoothedNoise(wholeX + 1, wholeY + 1);
+   // Computing vectors from the four points to the input point
+   float tx0 = x - floorf(x);
+   float tx1 = tx0 - 1;
 
-//    int i1 = (vector1, vector2, remainderX);
-//    int i2 = (vector3, vector4, remainderY);
-//    return interpolate(i1,i2, remainderY);
-// }
+   float ty0 = y - floorf(y);
+   float ty1 = ty0 - 1;
 
+   // Compute the dot-product between the vectors and the gradients
+   float v00 = gradientX[q00]*tx0 + gradientY[q00]*ty0;
+   float v01 = gradientX[q01]*tx1 + gradientY[q01]*ty0;
 
-// int interpolate(int a, int b, float x){
-   
-//    float ft = x * 3.1415927;
-//    float f = (1 - cos(ft)) * .5;
-//    return  a*(1-f) + b*f;
-// }
+   float v10 = gradientX[q10]*tx0 + gradientY[q10]*ty1;
+   float v11 = gradientX[q11]*tx1 + gradientY[q11]*ty1;
 
-// int perlinNoise(float x, float y){
+   // Do the bi-cubic interpolation to get the final value
+   float wx = (3 - 2*tx0)*tx0*tx0;
+   float v0 = v00 - wx*(v00 - v01);
+   float v1 = v10 - wx*(v10 - v11);
 
-//    int i = 0;
-//    float total = 0;
-//    int persistence = 1;
-//    int octaves = 5;
-//    float divAmplititude[6] = {1.0, 4.0, 16.0, 64.0, 256.0};
-//    float frequency[6] = {1.0,2.0,4.0,8.0,16.0};
+   float wy = (3 - 2*ty0)*ty0*ty0;
+   float v = v0 - wy*(v0 - v1);
 
-//    for(i = 0; i < octaves; i++){
-//       total = total + interpolatedNoise(x * frequency[i], y * frequency[i]) * (1/divAmplititude[i]);
-//       // printf("total: %f\n", total);
-//    }
+   return v;
 
-//    return total;
-// }
-
+}
 
 void genWorld(){
-   
+   srand(SEED);
    int i,j,k;
-   // float n = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
-   // float m = noise((rand() % RAND_MAX) * -30, (rand() % RAND_MAX) * -30);
+   int SIZE = 256;
+   int * p;
+   float * gradientX;
+   float * gradientY;
 
-   // printf("n: %f, m: %f\n", n,m);
+   if(   ((p = malloc(sizeof(int) * SIZE)) == NULL)
+      || ((gradientX = malloc(sizeof(int) * SIZE)) == NULL)
+      || ((gradientY = malloc(sizeof(int) * SIZE)) == NULL)){
+      fprintf(stderr, "No memory\n");
+      exit(1);
+   }
+
+
+   int octaves = 4;
+   float total = 0;
+   int modifier = 15;
+
    for(i=0; i<WORLDX; i++)
       for(j=0; j<WORLDY; j++)
          for(k=0; k<WORLDZ; k++)
             world[i][j][k] = 0;
 
-   fillGradient();
+   initializeTables(SIZE, p, gradientX, gradientY);
+
+   float tmp = 0;
 
    for(i=0; i<WORLDX; i++) {
       for(j=0; j<WORLDZ; j++) {
-         float tmp = perlin((float)i,(float)j);
-         printf("tmp: %f\n", tmp );
-         // exit(0);
-         world[i][(int)tmp][j] = 2;
-         // world[i][5][j] = 3;
-         // world[i][6][j] = 3;
-         // world[i][7][j] = 3;
+         tmp = perlin((float)(i) / modifier, (float)(j) / modifier, p, gradientX, gradientY, SIZE);
+         tmp = (tmp * 25) + 25;
+         for(k = 0; k < (int)tmp; k++){
+            world[i][k][j] = 1;
+         }
       }
-      exit(1);
    }
-
-
-   // for(i=0; i<WORLDX; i++) {
-   //    for(j=0; j<WORLDZ; j++) {
-   //       world[i][perlinNoise(n,m)][j] = 3;
-   //       n += 1.0;
-   //       m += 1.0;
-   //    }
-   // }
-
-
-      // for(i = 0; i < WORLDX; i++){
-      //    for (j = 0; j < WORLDY; j++){
-      //       printf("val: %d", perlinNoise(n,m));
-      //       n += 1.0;
-      //       m += 1.0;
-      //       // for(k = 0; k < WORLDZ - 1; k++){
-      //       //    octaveArray[i][j][k] = ;
-      //       // }
-      //    }
-      // } 
-
 }
 
 
@@ -454,7 +373,7 @@ int i, j, k;
 
 
    }
-      gravity(SECOND);
+      // gravity(SECOND);
 
 
 	/* starts the graphics processing loop */

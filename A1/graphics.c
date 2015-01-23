@@ -213,6 +213,9 @@ void getViewPosition(float *x, float *y, float *z) {
 }
 
 void setViewPosition(float x, float y, float z) {
+   oldvpx = vpx;
+   oldvpy = vpy;
+   oldvpz = vpz;
    vpx = x;
    vpy = y;
    vpz = z;
@@ -493,7 +496,7 @@ void reshape(int w, int h)
    glMatrixMode (GL_PROJECTION);
    glLoadIdentity ();
 	/* use skySize for far clipping plane */
-   gluPerspective(45.0, (GLfloat)w/(GLfloat)h, 0.1, skySize);
+   gluPerspective(45.0, (GLfloat)w/(GLfloat)h, 0.01, skySize);
    glMatrixMode (GL_MODELVIEW);
    glLoadIdentity ();
 }
