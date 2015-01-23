@@ -72,11 +72,6 @@ extern void tree(float, float, float, float, float, float, int);
 /********* end of extern variable declarations **************/
 
 
-int hasCollision = 0;
-float gradient[WORLDX][WORLDY][WORLDZ];
-void gravity(int);
-void fillGradient();
-
 
 	/*** collisionResponse() ***/
 	/* -performs collision detection and response */
@@ -103,7 +98,6 @@ void collisionResponse() {
 
    switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
       case 0:
-      hasCollision = 0;
          break;
       case 1:
       case 2:
@@ -122,7 +116,6 @@ void collisionResponse() {
 
          // getOldViewPosition(&prevx, &prevy, &prevz);
          setViewPosition(oldvpx, oldvpy, oldvpz);
-         hasCollision = 1;
          break;
    }
    return;
@@ -193,12 +186,13 @@ float *la;
 
    }
 
-      if(flycontrol == 1 ){
+      if(flycontrol == 0 ){
          float x,y,z;
-         collisionResponse();
          getViewPosition(&x, &y, &z);
          // printf("\n\nvpx: %f, vpy: %f, vpz: %f\n", x, y, z);
-         setViewPosition(x, y + 0.5, z);
+         if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
+            setViewPosition(x, y + 0.5, z);
+         }
       }
 }
 
