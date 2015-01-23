@@ -111,7 +111,13 @@ void collisionResponse() {
             printf("currx: %f, curry: %f, currz: %f\n", currx, curry, currz);
             fprintf(stderr, "Collision detected. ceil(y): %f\n\n\n", -1*(ceil(abs(curry) + 1)));
          #endif
-         setViewPosition(oldvpx, oldvpy, oldvpz);
+
+         if(world[(int)abs(currx)][(int)abs(curry) + 1][(int)abs(currz) + 1] == 0){
+               setViewPosition(currx, curry - 1, currz);
+         }
+         else{
+               setViewPosition(oldvpx, oldvpy, oldvpz);
+         }
          break;
    }
    return;
@@ -186,9 +192,13 @@ float *la;
          float x,y,z;
          getViewPosition(&x, &y, &z);
          if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
-            setViewPosition(x, y + 0.5, z);
+            setViewPosition(x, y + 0.25, z);
          }
       }
+
+
+
+
 }
 
 //Code from initializeTables and Perlin was taken and modified from
@@ -306,7 +316,13 @@ void genWorld(){
 
          //Filling the map so the terrain is not hollow
          for(k = 0; k < (int)height; k++){
-            world[i][k][j] = 1;
+            if((int)height > 30 && k > 30){
+               world[i][k][j] = 5;
+            } else if((int)height < 20 && k < 20){
+               world[i][k][j] = 2;
+            } else{
+               world[i][k][j] = 1;
+            }
          }
       }
    }
