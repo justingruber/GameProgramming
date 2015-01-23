@@ -89,10 +89,10 @@ void collisionResponse() {
    getViewPosition(&currx, &curry, &currz);      
 
    #ifdef debugCollision
-   fprintf(stderr, "Current position in the world: x: %d, y: %d, z: %d\n", (int)abs(currx), (int)abs(curry), (int)abs(currz));
-   fprintf(stderr, "Cube ID: %d\n", world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]);
-   getViewOrientation(&xaxis, &yaxis, &zaxis);
-   printf("xaxis: %d, yaxis: %d, zaxis: %f\n", (int)xaxis % 360, (int)yaxis % 360, zaxis);
+      fprintf(stderr, "Current position in the world: x: %d, y: %d, z: %d\n", (int)abs(currx), (int)abs(curry), (int)abs(currz));
+      fprintf(stderr, "Cube ID: %d\n", world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]);
+      getViewOrientation(&xaxis, &yaxis, &zaxis);
+      printf("xaxis: %d, yaxis: %d, zaxis: %f\n", (int)xaxis % 360, (int)yaxis % 360, zaxis);
    #endif
 
 
@@ -108,13 +108,9 @@ void collisionResponse() {
       case 7:
       case 8:
          #ifdef debugCollision
-         printf("currx: %f, curry: %f, currz: %f\n", currx, curry, currz);
-         fprintf(stderr, "Collision detected. ceil(y): %f\n\n\n", -1*(ceil(abs(curry) + 1)));
-
-         // exit(1);
+            printf("currx: %f, curry: %f, currz: %f\n", currx, curry, currz);
+            fprintf(stderr, "Collision detected. ceil(y): %f\n\n\n", -1*(ceil(abs(curry) + 1)));
          #endif
-
-         // getOldViewPosition(&prevx, &prevy, &prevz);
          setViewPosition(oldvpx, oldvpy, oldvpz);
          break;
    }
@@ -189,30 +185,29 @@ float *la;
       if(flycontrol == 0 ){
          float x,y,z;
          getViewPosition(&x, &y, &z);
-         // printf("\n\nvpx: %f, vpy: %f, vpz: %f\n", x, y, z);
          if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
             setViewPosition(x, y + 0.5, z);
          }
       }
 }
 
-//Code from initializeTables and Perlin was taken from and modified from
+//Code from initializeTables and Perlin was taken and modified from
 //http://www.angelcode.com/dev/perlin/perlin.html
-void initializeTables(int SIZE, int * p, float * gradientX, float * gradientY){
+void initializeTables(int SIZE, int * persistence, float * gradientX, float * gradientY){
    int i, j;
    
 
    // Initialize the permutation table
    for(i = 0; i < SIZE; i++)
-     p[i] = i;
+     persistence[i] = i;
 
    for(i = 0; i < SIZE; i++)
    {
      j = rand() % SIZE;
 
-     int nSwap = p[i];
-     p[i]  = p[j];
-     p[j]  = nSwap;
+     int nSwap = persistence[i];
+     persistence[i]  = persistence[j];
+     persistence[j]  = nSwap;
    }
       
    // Generate the gradient look-up tables
@@ -225,7 +220,7 @@ void initializeTables(int SIZE, int * p, float * gradientX, float * gradientY){
 }
 
 
-float perlin(float x, float y, int * p, float * gradientX, float * gradientY, int SIZE){
+float perlin(float x, float y, int * persistence, float * gradientX, float * gradientY, int SIZE){
    
    // Compute the integer positions of the four surrounding points
    int qx0 = (int)floorf(x);
@@ -235,11 +230,11 @@ float perlin(float x, float y, int * p, float * gradientX, float * gradientY, in
    int qy1 = qy0 + 1;
 
    // Permutate values to get indices to use with the gradient look-up tables
-   int q00 = p[(qy0 + p[qx0 % SIZE]) % SIZE];
-   int q01 = p[(qy0 + p[qx1 % SIZE]) % SIZE];
+   int q00 = persistence[(qy0 + persistence[qx0 % SIZE]) % SIZE];
+   int q01 = persistence[(qy0 + persistence[qx1 % SIZE]) % SIZE];
 
-   int q10 = p[(qy1 + p[qx0 % SIZE]) % SIZE];
-   int q11 = p[(qy1 + p[qx1 % SIZE]) % SIZE];
+   int q10 = persistence[(qy1 + persistence[qx0 % SIZE]) % SIZE];
+   int q11 = persistence[(qy1 + persistence[qx1 % SIZE]) % SIZE];
 
    // Computing vectors from the four points to the input point
    float tx0 = x - floorf(x);
@@ -268,39 +263,49 @@ float perlin(float x, float y, int * p, float * gradientX, float * gradientY, in
 }
 
 void genWorld(){
+   //Seeding for the pseudo-random world
    srand(SEED);
+   
    int i,j,k;
    int SIZE = 256;
-   int * p;
+
+   //Integer arrays that are dyanmically made based off of 'SIZE'
+   int * persistence;
    float * gradientX;
    float * gradientY;
 
-   if(   ((p = malloc(sizeof(int) * SIZE)) == NULL)
+
+   int octaves = 4;
+   int modifier = 15;
+   float height = 0;
+
+
+   //Checking to see if malloc was successful for the arrays
+   if(   ((persistence = malloc(sizeof(int) * SIZE)) == NULL)
       || ((gradientX = malloc(sizeof(int) * SIZE)) == NULL)
       || ((gradientY = malloc(sizeof(int) * SIZE)) == NULL)){
-      fprintf(stderr, "No memory\n");
+      fprintf(stderr, "Error: Not enough memory available.\n");
       exit(1);
    }
 
 
-   int octaves = 4;
-   float total = 0;
-   int modifier = 15;
 
    for(i=0; i<WORLDX; i++)
       for(j=0; j<WORLDY; j++)
          for(k=0; k<WORLDZ; k++)
             world[i][j][k] = 0;
 
-   initializeTables(SIZE, p, gradientX, gradientY);
+   //Initializing the persistence tables and the gradient tables
+   initializeTables(SIZE, persistence, gradientX, gradientY);
 
-   float tmp = 0;
 
    for(i=0; i<WORLDX; i++) {
       for(j=0; j<WORLDZ; j++) {
-         tmp = perlin((float)(i) / modifier, (float)(j) / modifier, p, gradientX, gradientY, SIZE);
-         tmp = (tmp * 25) + 25;
-         for(k = 0; k < (int)tmp; k++){
+         height = perlin((float)(i) / modifier, (float)(j) / modifier, persistence, gradientX, gradientY, SIZE);
+         height = (height * 25) + 25;
+
+         //Filling the map so the terrain is not hollow
+         for(k = 0; k < (int)height; k++){
             world[i][k][j] = 1;
          }
       }
@@ -365,10 +370,7 @@ int i, j, k;
 	/* your code to build the world goes here */
       genWorld();
 
-
    }
-      // gravity(SECOND);
-
 
 	/* starts the graphics processing loop */
 	/* code after this will not run until the program exits */
