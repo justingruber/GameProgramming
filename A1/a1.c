@@ -71,7 +71,10 @@ extern void tree(float, float, float, float, float, float, int);
 
 /********* end of extern variable declarations **************/
 
-
+void genClouds();
+int currentTime;
+int previousTime;
+int timeElapsed;
 
 	/*** collisionResponse() ***/
 	/* -performs collision detection and response */
@@ -123,7 +126,6 @@ void collisionResponse() {
    return;
 
 }
-
 
 	/*** update() ***/
 	/* background process, it is called when there are no other events */
@@ -188,18 +190,51 @@ float *la;
 
    }
 
-      if(flycontrol == 0 ){
-         float x,y,z;
-         getViewPosition(&x, &y, &z);
-         if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
-            setViewPosition(x, y + 0.25, z);
-         }
+   if(flycontrol == 0 ){
+      float x,y,z;
+      getViewPosition(&x, &y, &z);
+      if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
+         setViewPosition(x, y + 0.25, z);
       }
-
-
-
-
+   }
 }
+
+void genClouds(int num){
+
+   int x,z;
+   int position = rand() % WORLDX;
+   int z_pos = rand() % WORLDZ;
+   timeElapsed = currentTime - previousTime;
+   previousTime = currentTime;
+
+   //Checking to see if the time passed has been a second (or more)
+   //drawing a new cloud in a random position on the map
+   if(timeElapsed > 1000){
+         for(z = z_pos; z < z_pos + 5; z++){
+               world[z][WORLDY-1][position - 1] = 5;
+               world[z][WORLDY-1][position + 1] = 5;
+               world[z][WORLDY-1][position] = 5;
+         }
+   }
+   //Pulling the clouds though the map (checking for y-2 because of artifacts)
+   for(x = WORLDX; x >= 0; x--){
+      for(z = WORLDZ; z >= 0; z--){
+         if(world[x][WORLDY - 1][z] == 5){
+            world[x][WORLDY - 1][z + 1] = 5;
+            world[x][WORLDY - 1][z] = 0;
+         }
+         if(world[x][WORLDY - 2][z] == 5){
+            world[x][WORLDY - 2][z + 1] = 5;
+            world[x][WORLDY - 2][z] = 0;
+         }
+           
+      }
+   }
+   currentTime = glutGet(GLUT_ELAPSED_TIME);
+   glutTimerFunc(1000, genClouds, 1000);
+}
+
+
 
 //Code from initializeTables and Perlin was taken and modified from
 //http://www.angelcode.com/dev/perlin/perlin.html
@@ -304,7 +339,8 @@ void genWorld(){
       for(j=0; j<WORLDY; j++)
          for(k=0; k<WORLDZ; k++)
             world[i][j][k] = 0;
-
+         
+   // world[23][WORLDY-1][23] = 8;
    //Initializing the persistence tables and the gradient tables
    initializeTables(SIZE, persistence, gradientX, gradientY);
 
@@ -384,8 +420,9 @@ int i, j, k;
    } else {
 
 	/* your code to build the world goes here */
-      genWorld();
-
+      genWorld();      
+      genClouds(1);
+      currentTime = glutGet(GLUT_ELAPSED_TIME);
    }
 
 	/* starts the graphics processing loop */

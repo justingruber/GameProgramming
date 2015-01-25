@@ -23,4 +23,4 @@ GLubyte  world[WORLDX][WORLDY][WORLDZ];
 // #define debugCollision
 
 #define SEED 1131992
-#define SECOND 1000
+#define FPS 1000/10
