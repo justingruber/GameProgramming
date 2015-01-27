@@ -1,5 +1,5 @@
 
-INCLUDES = -F/System/Library/Frameworks -framework OpenGL -framework GLUT
+INCLUDES = -F/System/Library/Frameworks -framework OpenGL -framework GLUT -g3
 
 # INCLUDES = -I/usr/include/GL/ -lGL -lGLU -lglut -lm -g3
 

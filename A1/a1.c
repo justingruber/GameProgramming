@@ -210,25 +210,30 @@ void genClouds(int num){
    //Checking to see if the time passed has been a second (or more)
    //drawing a new cloud in a random position on the map
    if(timeElapsed > 1000){
-         for(z = z_pos; z < z_pos + 5; z++){
-               world[z][WORLDY-1][position - 1] = 5;
-               world[z][WORLDY-1][position + 1] = 5;
-               world[z][WORLDY-1][position] = 5;
+      if(position + 6 < WORLDX){
+         if(z_pos + 6 < WORLDZ){
+            for(z = z_pos; z < z_pos + 5; z++){
+                  world[z][WORLDY - 2][position - 1] = 5;
+                  world[z][WORLDY - 2][position + 1] = 5;
+                  world[z][WORLDY - 2][position] = 5;
+            }
          }
+      }
    }
    //Pulling the clouds though the map (checking for y-2 because of artifacts)
-   for(x = WORLDX; x >= 0; x--){
-      for(z = WORLDZ; z >= 0; z--){
-         if(world[x][WORLDY - 1][z] == 5){
-            world[x][WORLDY - 1][z + 1] = 5;
-            world[x][WORLDY - 1][z] = 0;
-         }
+   for(x = 0; x < WORLDX; x++){
+      for(z = 0; z < WORLDZ; z++){
          if(world[x][WORLDY - 2][z] == 5){
-            world[x][WORLDY - 2][z + 1] = 5;
-            world[x][WORLDY - 2][z] = 0;
+            if(z != WORLDZ){
+               world[x][WORLDY - 2][z - 1] = 5;
+               world[x][WORLDY - 2][z] = 0;
+            }
          }
            
       }
+   }
+   for(x = 0; x < WORLDX; x++){
+      world[x][WORLDY - 2][0] = 0;
    }
    currentTime = glutGet(GLUT_ELAPSED_TIME);
    glutTimerFunc(1000, genClouds, 1000);
