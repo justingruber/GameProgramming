@@ -190,7 +190,7 @@ float *la;
 
    }
 
-   if(flycontrol == 0 ){
+   if(flycontrol == 1 ){
       float x,y,z;
       getViewPosition(&x, &y, &z);
       if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
