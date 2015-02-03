@@ -10,9 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
 
 #include "graphics.h"
+
+	/* mouse function called by GLUT when a button is pressed or released */
+void mouse(int, int, int, int);
 
 	/* initialize graphics library */
 extern void graphicsInit(int *, char **);
@@ -46,9 +48,6 @@ extern void showPlayer(int);
 extern int flycontrol;
 	/* flag used to indicate that the test world should be used */
 extern int testWorld;
-	/* list and count of polygons to be displayed, set during culling */
-extern int displayList[MAX_DISPLAY_LIST][3];
-extern int displayCount;
 	/* flag to print out frames per second */
 extern int fps;
 	/* flag to indicate removal of cube the viewer is facing */
@@ -61,15 +60,16 @@ extern int netServer;
 	/* frustum corner coordinates, used for visibility determination  */
 extern float corners[4][3];
 
-extern float vpx, vpy, vpz;
-extern float oldvpx, oldvpy, oldvpz;
-
-
 	/* determine which cubes are visible e.g. in view frustum */
 extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
 
+
+extern float vpx, vpy, vpz;
+extern float oldvpx, oldvpy, oldvpz;
+
 /********* end of extern variable declarations **************/
+
 
 void genClouds();
 int currentTime;
@@ -83,6 +83,7 @@ int timeElapsed;
 	/* note that the world coordinates returned from getViewPosition()
 	   will be the negative value of the array indices */
 void collisionResponse() {
+
 	/* your collision code goes here */
    float currx = 0, curry = 0, currz = 0;
    float prevx = 0, prevy = 0, prevz = 0;
@@ -101,6 +102,12 @@ void collisionResponse() {
 
    switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
       case 0:
+
+         if(abs(currx) <= 0.1 || abs(currx) >= WORLDX ||
+            abs(currz) <= 0.1 || abs(currz) >= WORLDZ ||
+            abs(curry) <= 0.1 || abs(curry) >= WORLDY ){
+            setViewPosition(oldvpx, oldvpy, oldvpz);
+         }
          break;
       case 1:
       case 2:
@@ -119,13 +126,14 @@ void collisionResponse() {
                setViewPosition(currx, curry - 1, currz);
          }
          else{
-               setViewPosition(oldvpx, oldvpy, oldvpz);
+            setViewPosition(oldvpx, oldvpy, oldvpz);
          }
          break;
    }
    return;
 
 }
+
 
 	/*** update() ***/
 	/* background process, it is called when there are no other events */
@@ -186,10 +194,10 @@ float *la;
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
    } else {
+
 	/* your code goes here */
 
    }
-
    if(flycontrol == 1 ){
       float x,y,z;
       getViewPosition(&x, &y, &z);
@@ -198,6 +206,7 @@ float *la;
       }
    }
 }
+
 
 void genClouds(int num){
 
@@ -210,30 +219,34 @@ void genClouds(int num){
    //Checking to see if the time passed has been a second (or more)
    //drawing a new cloud in a random position on the map
    if(timeElapsed > 1000){
-         for(z = z_pos; z < z_pos + 5; z++){
-               world[z][WORLDY-1][position - 1] = 5;
-               world[z][WORLDY-1][position + 1] = 5;
-               world[z][WORLDY-1][position] = 5;
+      if(position + 6 < WORLDX){
+         if(z_pos + 6 < WORLDZ){
+            for(z = z_pos; z < z_pos + 5; z++){
+                  world[z][WORLDY - 2][position - 1] = 5;
+                  world[z][WORLDY - 2][position + 1] = 5;
+                  world[z][WORLDY - 2][position] = 5;
+            }
          }
+      }
    }
    //Pulling the clouds though the map (checking for y-2 because of artifacts)
-   for(x = WORLDX; x >= 0; x--){
-      for(z = WORLDZ; z >= 0; z--){
-         if(world[x][WORLDY - 1][z] == 5){
-            world[x][WORLDY - 1][z + 1] = 5;
-            world[x][WORLDY - 1][z] = 0;
-         }
+   for(x = 0; x < WORLDX; x++){
+      for(z = 0; z < WORLDZ; z++){
          if(world[x][WORLDY - 2][z] == 5){
-            world[x][WORLDY - 2][z + 1] = 5;
-            world[x][WORLDY - 2][z] = 0;
+            if(z != WORLDZ){
+               world[x][WORLDY - 2][z - 1] = 5;
+               world[x][WORLDY - 2][z] = 0;
+            }
          }
            
       }
    }
+   for(x = 0; x < WORLDX; x++){
+      world[x][WORLDY - 2][0] = 0;
+   }
    currentTime = glutGet(GLUT_ELAPSED_TIME);
    glutTimerFunc(1000, genClouds, 1000);
 }
-
 
 
 //Code from initializeTables and Perlin was taken and modified from
@@ -365,6 +378,29 @@ void genWorld(){
 }
 
 
+	/* called by GLUT when a mouse button is pressed or released */
+	/* -button indicates which button was pressed or released */
+	/* -state indicates a button down or button up event */
+	/* -x,y are the screen coordinates when the mouse is pressed or */
+	/*  released */ 
+void mouse(int button, int state, int x, int y) {
+
+   if (button == GLUT_LEFT_BUTTON)
+      printf("left button - ");
+   else if (button == GLUT_MIDDLE_BUTTON)
+      printf("middle button - ");
+   else
+      printf("right button - ");
+
+   if (state == GLUT_UP)
+      printf("up - ");
+   else
+      printf("down - ");
+
+   printf("%d %d\n", x, y);
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -384,7 +420,7 @@ int i, j, k;
          for(j=0; j<WORLDY; j++)
             for(k=0; k<WORLDZ; k++)
                world[i][j][k] = 0;
-	
+
 	/* some sample objects */
 	/* build a red platform */
       for(i=0; i<WORLDX; i++) {
@@ -423,7 +459,10 @@ int i, j, k;
       genWorld();      
       genClouds(1);
       currentTime = glutGet(GLUT_ELAPSED_TIME);
+
+
    }
+
 
 	/* starts the graphics processing loop */
 	/* code after this will not run until the program exits */
