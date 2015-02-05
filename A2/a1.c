@@ -70,11 +70,28 @@ extern float oldvpx, oldvpy, oldvpz;
 
 /********* end of extern variable declarations **************/
 
+typedef struct projectile {
+   float ang;
+   float vel;
+   // float speed;
+   int id;
+   int x,y,z;
+   int isActive;
+
+
+} Projectile;
 
 void genClouds();
 int currentTime;
 int previousTime;
 int timeElapsed;
+int hasFired = 0;
+float velocity = 0.0;
+float angle = 0.0;
+float xUp = 0, xDown = 0, xDifference = 0;
+float yUp = 0, yDown = 0, yDifference = 0;
+Projectile * projArray[MOB_COUNT];
+
 
 	/*** collisionResponse() ***/
 	/* -performs collision detection and response */
@@ -131,7 +148,6 @@ void collisionResponse() {
          break;
    }
    return;
-
 }
 
 
@@ -141,8 +157,8 @@ void collisionResponse() {
 	/*  system is running */
 	/* -gravity must also implemented here, duplicate collisionResponse */
 void update() {
-int i, j, k;
-float *la;
+   int i, j, k;
+   float *la;
 
 	/* sample animation for the test world, don't remove this code */
 	/* -demo of animating mobs */
@@ -194,8 +210,29 @@ float *la;
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
    } else {
+      int i = 0;
+      float x,y,z;
+   /* your code goes here */
+      // printf("time: %d\n", glutGet(GLUT_ELAPSED_TIME) % 1000);
+      if(glutGet(GLUT_ELAPSED_TIME) % 200 > 180){
+         do{
+            Projectile * tmp = projArray[i];
+            if(tmp->isActive == 1){
+               if(tmp->x >= WORLDX || tmp->z >= WORLDZ){
+                  hideMob(tmp->id);
+                  // free(tmp);
+                  hasFired = 0;
+                  tmp->isActive = 0;
+               }
+               else{
+                  setMobPosition(tmp->id, tmp->x, tmp->y, tmp->z, 0.0);
+                  tmp->x += 1.0;
+               }
+            }
+            i++;
+         }while(i < MOB_COUNT);
+      }
 
-	/* your code goes here */
 
    }
    if(flycontrol == 1 ){
@@ -274,7 +311,6 @@ void initializeTables(int SIZE, int * persistence, float * gradientX, float * gr
      gradientX[i] = (float)(rand())/(RAND_MAX/2) - 1.0f; 
      gradientY[i] = (float)(rand())/(RAND_MAX/2) - 1.0f;
    }  
-
 }
 
 
@@ -317,7 +353,6 @@ float perlin(float x, float y, int * persistence, float * gradientX, float * gra
    float v = v0 - wy*(v0 - v1);
 
    return v;
-
 }
 
 void genWorld(){
@@ -378,26 +413,126 @@ void genWorld(){
 }
 
 
+void initProjectiles(){
+   int i;
+
+   for(i = 0; i < MOB_COUNT; i++){
+
+      Projectile * tmp = malloc(sizeof(Projectile));
+      tmp->isActive = 0;
+      tmp->id = -1;
+      tmp->ang = 0;
+      tmp->vel = 0;
+      tmp->x = 0;
+      tmp->y = 0;
+      tmp->z = 0;
+      projArray[i] = tmp;
+   }
+}
+
+
+void shoot(){
+   hasFired = 1;
+   float x,y,z;
+   float roll,yaw,pitch;
+   float i = 0;
+
+   getViewPosition(&x, &y, &z);
+   getViewOrientation(&roll, &yaw, &pitch);
+   
+   // printf("x: %f, y: %f, z: %f\n",x, y, z);
+   // printf("roll: %f, yaw: %f, pitch: %f\n", roll, yaw, pitch);
+   
+   do{
+      Projectile * tmp = projArray[(int)i];
+      if(tmp->isActive == 0){
+         tmp->id = i;
+         tmp->ang = angle;
+         tmp->vel = velocity;
+         tmp->x = abs(x);
+         tmp->y = abs(y);
+         tmp->z = abs(z);
+         tmp->isActive = 1;
+         createMob(tmp->id, abs(x), abs(y), abs(z), roll);
+         break;
+      }
+      i++;
+   }while(i < MOB_COUNT);
+}
+
 	/* called by GLUT when a mouse button is pressed or released */
 	/* -button indicates which button was pressed or released */
 	/* -state indicates a button down or button up event */
 	/* -x,y are the screen coordinates when the mouse is pressed or */
 	/*  released */ 
 void mouse(int button, int state, int x, int y) {
+   
 
-   if (button == GLUT_LEFT_BUTTON)
-      printf("left button - ");
-   else if (button == GLUT_MIDDLE_BUTTON)
-      printf("middle button - ");
-   else
-      printf("right button - ");
+   if (button == GLUT_LEFT_BUTTON){
+      // printf("left button - ");
+      if(state == GLUT_DOWN)
+         shoot();
+   }
 
-   if (state == GLUT_UP)
-      printf("up - ");
-   else
-      printf("down - ");
+   else if (button == GLUT_MIDDLE_BUTTON){
+      // printf("middle button - ");
+   }
+   else{
+      // printf("right button - ");
+      if (state == GLUT_UP){
+         // printf("up - ");
+         xUp = (float)x;
+         yUp = (float)y;
+         xDifference = (xUp - xDown);
+         yDifference = (yUp - yDown);
+         // printf("xUp: %f, xDown: %f, yUp: %f, yDown: %f \nxDifference: %f, yDifference: %f \n", xUp, xDown, yUp, yDown, xDifference, yDifference);
 
-   printf("%d %d\n", x, y);
+         if(xDifference > 0){
+            if(angle + xDifference < 90.0){
+               angle += xDifference / 100.0;
+               printf("Angle: %f\n", angle);
+            }
+         }
+         else{
+            if(angle + xDifference > 0.0){
+               angle += xDifference / 100.0;
+               printf("Angle: %f\n", angle);   
+            }
+         }
+
+         if(yDifference > 0){
+            if(velocity + yDifference < 100.0){
+               velocity += yDifference / 100.0;
+               printf("Velocity: %f\n", velocity);
+            }
+         }
+         else{
+            if(velocity + yDifference > 0.0){
+               velocity += yDifference / 100.0;
+               printf("Velocity: %f\n", velocity);
+            }
+         }
+
+         // printf("xDifference: %f, yDifference: %f\n", xDifference, yDifference);
+      }
+      else{
+         xDown = (float)x;
+         yDown = (float)y;
+      }
+   }
+
+   // if (state == GLUT_UP){
+   //    printf("up - ");
+   //    xUp = x;
+   //    yUp = y;
+   // }
+   // else{
+   //    printf("down - ");
+   //    xDown = x;
+   //    yDown = y;
+   // }
+
+   // printf("%d %d\n", x, y);
 }
 
 
@@ -458,9 +593,8 @@ int i, j, k;
 	/* your code to build the world goes here */
       genWorld();      
       genClouds(1);
+      initProjectiles();
       currentTime = glutGet(GLUT_ELAPSED_TIME);
-
-
    }
 
 

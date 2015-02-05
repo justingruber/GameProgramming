@@ -17,6 +17,10 @@ GLubyte  world[WORLDX][WORLDY][WORLDZ];
 
 #define MAX_DISPLAY_LIST 500000
 
+#define MOB_COUNT 10
+#define PLAYER_COUNT 10
+
+
 //Uncomment this to enable debug information
 // #define debugMapGen
 // #define debugCollision
