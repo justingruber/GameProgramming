@@ -76,18 +76,23 @@ typedef struct projectile {
    // float speed;
    int id;
    int x,y,z;
+   float rx, ry, rz;
    int isActive;
-
+   float currTime;
 
 } Projectile;
 
 void genClouds();
+void moveClouds();
+void moveProjectiles();
+float findHeightAtTimeT(float, float, float, float, int);
+float findDistancetAtTimeT(float, float, float, float, int);
 int currentTime;
 int previousTime;
 int timeElapsed;
 int hasFired = 0;
-float velocity = 0.0;
-float angle = 0.0;
+float velocity = 0.5;
+float angle = 45.0;
 float xUp = 0, xDown = 0, xDifference = 0;
 float yUp = 0, yDown = 0, yDifference = 0;
 Projectile * projArray[MOB_COUNT];
@@ -210,29 +215,16 @@ void update() {
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
    } else {
-      int i = 0;
-      float x,y,z;
+      int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
    /* your code goes here */
       // printf("time: %d\n", glutGet(GLUT_ELAPSED_TIME) % 1000);
-      if(glutGet(GLUT_ELAPSED_TIME) % 200 > 180){
-         do{
-            Projectile * tmp = projArray[i];
-            if(tmp->isActive == 1){
-               if(tmp->x >= WORLDX || tmp->z >= WORLDZ){
-                  hideMob(tmp->id);
-                  // free(tmp);
-                  hasFired = 0;
-                  tmp->isActive = 0;
-               }
-               else{
-                  setMobPosition(tmp->id, tmp->x, tmp->y, tmp->z, 0.0);
-                  tmp->x += 1.0;
-               }
-            }
-            i++;
-         }while(i < MOB_COUNT);
-      }
 
+      if(timeElapsed % 100 > 80)
+         moveProjectiles();
+      if(timeElapsed % 1000 > 950)
+         genClouds();
+      if(timeElapsed % 150 > 130)
+         moveClouds();
 
    }
    if(flycontrol == 1 ){
@@ -244,28 +236,8 @@ void update() {
    }
 }
 
-
-void genClouds(int num){
-
-   int x,z;
-   int position = rand() % WORLDX;
-   int z_pos = rand() % WORLDZ;
-   timeElapsed = currentTime - previousTime;
-   previousTime = currentTime;
-
-   //Checking to see if the time passed has been a second (or more)
-   //drawing a new cloud in a random position on the map
-   if(timeElapsed > 1000){
-      if(position + 6 < WORLDX){
-         if(z_pos + 6 < WORLDZ){
-            for(z = z_pos; z < z_pos + 5; z++){
-                  world[z][WORLDY - 2][position - 1] = 5;
-                  world[z][WORLDY - 2][position + 1] = 5;
-                  world[z][WORLDY - 2][position] = 5;
-            }
-         }
-      }
-   }
+void moveClouds(){
+   int x, z;
    //Pulling the clouds though the map (checking for y-2 because of artifacts)
    for(x = 0; x < WORLDX; x++){
       for(z = 0; z < WORLDZ; z++){
@@ -279,12 +251,25 @@ void genClouds(int num){
       }
    }
    for(x = 0; x < WORLDX; x++){
-      world[x][WORLDY - 2][0] = 0;
-   }
-   currentTime = glutGet(GLUT_ELAPSED_TIME);
-   glutTimerFunc(1000, genClouds, 1000);
+        world[x][WORLDY - 2][0] = 0;
+   };
 }
 
+void genClouds(){
+   int z;
+   int position = (rand() % WORLDX) + 1;
+   int z_pos = (rand() % WORLDZ) + 1;
+
+   if(position + 6 < WORLDX){
+      if(z_pos + 6 < WORLDZ){
+         for(z = z_pos; z < z_pos + 5; z++){
+               world[z][WORLDY - 2][position - 1] = 5;
+               world[z][WORLDY - 2][position + 1] = 5;
+               world[z][WORLDY - 2][position] = 5;
+         }
+      }
+   }
+}
 
 //Code from initializeTables and Perlin was taken and modified from
 //http://www.angelcode.com/dev/perlin/perlin.html
@@ -312,7 +297,6 @@ void initializeTables(int SIZE, int * persistence, float * gradientX, float * gr
      gradientY[i] = (float)(rand())/(RAND_MAX/2) - 1.0f;
    }  
 }
-
 
 float perlin(float x, float y, int * persistence, float * gradientX, float * gradientY, int SIZE){
    
@@ -412,7 +396,6 @@ void genWorld(){
    }
 }
 
-
 void initProjectiles(){
    int i;
 
@@ -426,10 +409,117 @@ void initProjectiles(){
       tmp->x = 0;
       tmp->y = 0;
       tmp->z = 0;
+      tmp->currTime = 0.0;
       projArray[i] = tmp;
    }
 }
 
+float findHeightAtTimeT(float initHeight, float theta, float currVelocity, float currTime, int direction){
+
+   float acceleration = -0.98;
+   float vy;
+   float currVelocity2 = currVelocity * 10;
+   if(direction >= 0 && direction <= 45)        //1
+      vy = sin(theta) * currVelocity2;
+
+   else if(direction > 45 && direction <= 90)   //2
+      vy = cos(theta) * currVelocity2;
+
+   else if(direction > 90 && direction <= 135)  //3
+      vy = cos(theta) * currVelocity2;
+
+   else if(direction > 135 && direction <= 180) //4
+      vy = sin(theta) * currVelocity2;
+
+   else if(direction > 180 && direction <= 225) //5
+      vy = -1 * (sin(theta) * currVelocity2);
+
+   else if(direction > 225 && direction <= 270) //6
+      vy = -1 * (cos(theta) * currVelocity2);
+
+   else if(direction > 270 && direction <= 315) //7
+      vy = -1 * (cos(theta) * currVelocity2);
+
+   else if(direction > 315 && direction <= 360) //8
+      vy = -1 * (sin(theta) * currVelocity2);
+
+   return initHeight + (vy * currTime) + ((0.5 * acceleration) *  pow(currTime, 2));
+}
+
+float findDistancetAtTimeT(float initDistance, float theta, float currVelocity, float currTime, int direction){
+   float acceleration = 0.0;
+   float vx;
+   float currVelocity2 = currVelocity * 10;
+   if(direction >= 0 && direction <= 45)        //1
+      vx = cos(theta) * currVelocity2;
+
+   else if(direction > 45 && direction <= 90)   //2
+      vx = sin(theta) * currVelocity2;
+
+   else if(direction > 90 && direction <= 135)  //3
+      vx = -1 * sin(theta) * currVelocity2;
+
+   else if(direction > 135 && direction <= 180) //4
+      vx = -1 * cos(theta) * currVelocity2;
+
+   else if(direction > 180 && direction <= 225) //5
+      vx = -1 * (cos(theta) * currVelocity2);
+
+   else if(direction > 225 && direction <= 270) //6
+      vx = -1 * (sin(theta) * currVelocity2);
+
+   else if(direction > 270 && direction <= 315) //7
+      vx = sin(theta) * currVelocity2;
+
+   else if(direction > 315 && direction <= 360) //8
+      vx = cos(theta) * currVelocity2;
+
+   return initDistance + (vx * currTime);
+}
+
+
+void moveProjectiles(){
+   int i = 0;
+   float x,y,z;
+   float direction;
+   float vx, yx;
+   float currHeight, currXDistance, currZDistance;
+   do{
+      Projectile * currProjectile = projArray[i];
+      if(currProjectile->isActive == 1){
+         if(currProjectile->x >= WORLDX || currProjectile->z >= WORLDZ){
+            hideMob(currProjectile->id);
+            hasFired = 0;
+            currProjectile->isActive = 0;
+            currProjectile->currTime = 0.0;
+         }
+         else{
+            int direction = (int)currProjectile->ry % 360;
+
+
+            currHeight = findHeightAtTimeT(currProjectile->y, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
+            currXDistance = findDistancetAtTimeT(currProjectile->x, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
+            currZDistance = findDistancetAtTimeT(currProjectile->z, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
+
+            printf("x: %d, y: %d, z: %d, currHeight: %f, angle: %f, velocity: %f, time: %f, direction: %d\n", currProjectile->x, currProjectile->y, currProjectile->z, currHeight, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
+            
+            if(world[currProjectile->x][(int)currHeight][currProjectile->z] == 0){
+               setMobPosition(currProjectile->id, currXDistance, currHeight, currZDistance, 0.0);
+               currProjectile->x += 1.0;
+            }
+            else{
+               printf("boom!\n");
+               hideMob(currProjectile->id);
+               hasFired = 0;
+               currProjectile->isActive = 0;
+               currProjectile->currTime = 0.0;
+            }
+         }
+         currProjectile->currTime += 0.5;
+      }
+      i++;
+   }while(i < MOB_COUNT);
+}
 
 void shoot(){
    hasFired = 1;
@@ -452,6 +542,9 @@ void shoot(){
          tmp->x = abs(x);
          tmp->y = abs(y);
          tmp->z = abs(z);
+         tmp->rx = roll;
+         tmp->ry = yaw;
+         tmp->rz = pitch;
          tmp->isActive = 1;
          createMob(tmp->id, abs(x), abs(y), abs(z), roll);
          break;
@@ -592,7 +685,7 @@ int i, j, k;
 
 	/* your code to build the world goes here */
       genWorld();      
-      genClouds(1);
+      genClouds();
       initProjectiles();
       currentTime = glutGet(GLUT_ELAPSED_TIME);
    }
