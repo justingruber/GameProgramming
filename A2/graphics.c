@@ -43,7 +43,7 @@ GLfloat viewpointLight[] = {-50.0, -50.0, -50.0, 1.0};
 float skySize;
 
 	/* command line flags */
-int flycontrol = 1;		// allow viewpoint to move in y axis when 1
+int flycontrol = 0;		// allow viewpoint to move in y axis when 1
 int displayAllCubes = 0;	// draw all of the cubes in the world when 1
 int testWorld = 0;		// sample world for timing tests
 int fps = 0;			// turn on frame per second output

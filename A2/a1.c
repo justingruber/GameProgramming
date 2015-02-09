@@ -73,12 +73,13 @@ extern float oldvpx, oldvpy, oldvpz;
 typedef struct projectile {
    float ang;
    float vel;
-   // float speed;
    int id;
-   int x,y,z;
-   float rx, ry, rz;
+   float x,y,z;
+   float rx, ry;
    int isActive;
    float currTime;
+   float vel_y, vel_x, vel_z;
+   int quadrent;
 
 } Projectile;
 
@@ -87,12 +88,9 @@ void moveClouds();
 void moveProjectiles();
 float findHeightAtTimeT(float, float, float, float, int);
 float findDistancetAtTimeT(float, float, float, float, int);
-int currentTime;
-int previousTime;
-int timeElapsed;
 int hasFired = 0;
 float velocity = 0.5;
-float angle = 45.0;
+float angle = 0.0;
 float xUp = 0, xDown = 0, xDifference = 0;
 float yUp = 0, yDown = 0, yDifference = 0;
 Projectile * projArray[MOB_COUNT];
@@ -121,7 +119,7 @@ void collisionResponse() {
       printf("xaxis: %d, yaxis: %d, zaxis: %f\n", (int)xaxis % 360, (int)yaxis % 360, zaxis);
    #endif
 
-
+   //Checking to see which block you are hitting (used a switch just in case there were special blocks for later assignments)
    switch(world[(int)abs(currx)][(int)abs(curry)][(int)abs(currz)]){
       case 0:
 
@@ -216,10 +214,9 @@ void update() {
     /* end testworld animation */
    } else {
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
-   /* your code goes here */
-      // printf("time: %d\n", glutGet(GLUT_ELAPSED_TIME) % 1000);
 
-      if(timeElapsed % 100 > 80)
+      //Moddig the time that has passed since init() was called, using this as timing for update calls.
+      if(timeElapsed % 50 > 40)
          moveProjectiles();
       if(timeElapsed % 1000 > 950)
          genClouds();
@@ -227,7 +224,8 @@ void update() {
          moveClouds();
 
    }
-   if(flycontrol == 1 ){
+
+   if(flycontrol == 0 ){
       float x,y,z;
       getViewPosition(&x, &y, &z);
       if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
@@ -260,6 +258,7 @@ void genClouds(){
    int position = (rand() % WORLDX) + 1;
    int z_pos = (rand() % WORLDZ) + 1;
 
+   //Making clouds 5x3 
    if(position + 6 < WORLDX){
       if(z_pos + 6 < WORLDZ){
          for(z = z_pos; z < z_pos + 5; z++){
@@ -351,9 +350,7 @@ void genWorld(){
    float * gradientX;
    float * gradientY;
 
-
-   int octaves = 4;
-   int modifier = 15;
+   int modifier = 26;
    float height = 0;
 
 
@@ -364,8 +361,6 @@ void genWorld(){
       fprintf(stderr, "Error: Not enough memory available.\n");
       exit(1);
    }
-
-
 
    for(i=0; i<WORLDX; i++)
       for(j=0; j<WORLDY; j++)
@@ -396,6 +391,7 @@ void genWorld(){
    }
 }
 
+//Setting all of the values in the struct for a projectile to 0
 void initProjectiles(){
    int i;
 
@@ -414,101 +410,90 @@ void initProjectiles(){
    }
 }
 
-float findHeightAtTimeT(float initHeight, float theta, float currVelocity, float currTime, int direction){
+//Finding which quadrent you are facing
+int findQuadrent(float direction){
+   int quad;
 
-   float acceleration = -0.98;
-   float vy;
-   float currVelocity2 = currVelocity * 10;
-   if(direction >= 0 && direction <= 45)        //1
-      vy = sin(theta) * currVelocity2;
+   if(direction >= 0 && direction < 90)
+      quad = 1;
 
-   else if(direction > 45 && direction <= 90)   //2
-      vy = cos(theta) * currVelocity2;
+   else if(direction >= 90 && direction < 180)
+      quad = 2;
 
-   else if(direction > 90 && direction <= 135)  //3
-      vy = cos(theta) * currVelocity2;
+   else if(direction >= 180 && direction < 270)
+      quad = 3;   
 
-   else if(direction > 135 && direction <= 180) //4
-      vy = sin(theta) * currVelocity2;
+   else if(direction >= 270 && direction < 360)
+      quad = 4;
 
-   else if(direction > 180 && direction <= 225) //5
-      vy = -1 * (sin(theta) * currVelocity2);
-
-   else if(direction > 225 && direction <= 270) //6
-      vy = -1 * (cos(theta) * currVelocity2);
-
-   else if(direction > 270 && direction <= 315) //7
-      vy = -1 * (cos(theta) * currVelocity2);
-
-   else if(direction > 315 && direction <= 360) //8
-      vy = -1 * (sin(theta) * currVelocity2);
-
-   return initHeight + (vy * currTime) + ((0.5 * acceleration) *  pow(currTime, 2));
+   return quad;
 }
-
-float findDistancetAtTimeT(float initDistance, float theta, float currVelocity, float currTime, int direction){
-   float acceleration = 0.0;
-   float vx;
-   float currVelocity2 = currVelocity * 10;
-   if(direction >= 0 && direction <= 45)        //1
-      vx = cos(theta) * currVelocity2;
-
-   else if(direction > 45 && direction <= 90)   //2
-      vx = sin(theta) * currVelocity2;
-
-   else if(direction > 90 && direction <= 135)  //3
-      vx = -1 * sin(theta) * currVelocity2;
-
-   else if(direction > 135 && direction <= 180) //4
-      vx = -1 * cos(theta) * currVelocity2;
-
-   else if(direction > 180 && direction <= 225) //5
-      vx = -1 * (cos(theta) * currVelocity2);
-
-   else if(direction > 225 && direction <= 270) //6
-      vx = -1 * (sin(theta) * currVelocity2);
-
-   else if(direction > 270 && direction <= 315) //7
-      vx = sin(theta) * currVelocity2;
-
-   else if(direction > 315 && direction <= 360) //8
-      vx = cos(theta) * currVelocity2;
-
-   return initDistance + (vx * currTime);
-}
-
 
 void moveProjectiles(){
    int i = 0;
+   int j = 5,k = 0,l = 0;
    float x,y,z;
    float direction;
-   float vx, yx;
-   float currHeight, currXDistance, currZDistance;
+   float vel_x, vel_z, vel_zx, vel_y;
+   int quadrent;
+
+   //Looping through all of the mobs in the Projectile array
    do{
       Projectile * currProjectile = projArray[i];
+
+      //If the current projectile is active, then do updates on it, else do nothing
       if(currProjectile->isActive == 1){
+
+         //Bounds checking on current projectile to make sure it is within the world
          if(currProjectile->x >= WORLDX || currProjectile->z >= WORLDZ){
             hideMob(currProjectile->id);
             hasFired = 0;
             currProjectile->isActive = 0;
             currProjectile->currTime = 0.0;
          }
+         //Update the projectile's position in the world
          else{
-            int direction = (int)currProjectile->ry % 360;
 
+            //Update of projectile's current position
+            currProjectile->y += currProjectile->vel_y;
+            currProjectile->x += currProjectile->vel_x;
+            currProjectile->z += currProjectile->vel_z;
 
-            currHeight = findHeightAtTimeT(currProjectile->y, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
-            currXDistance = findDistancetAtTimeT(currProjectile->x, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
-            currZDistance = findDistancetAtTimeT(currProjectile->z, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
+            //Decrementing the y value to get an arc, and setting a cap for the degradation
+            if(currProjectile->vel_y > - 5)
+               currProjectile->vel_y -= 0.75;
 
-            printf("x: %d, y: %d, z: %d, currHeight: %f, angle: %f, velocity: %f, time: %f, direction: %d\n", currProjectile->x, currProjectile->y, currProjectile->z, currHeight, currProjectile->ang, currProjectile->vel, currProjectile->currTime, direction);
-            
-            if(world[currProjectile->x][(int)currHeight][currProjectile->z] == 0){
-               setMobPosition(currProjectile->id, currXDistance, currHeight, currZDistance, 0.0);
-               currProjectile->x += 1.0;
+            //Checking max and min bounds of the projectile 
+            if((currProjectile->x > 0 && currProjectile->x < WORLDX) &&
+               (currProjectile->z > 0 && currProjectile->z < WORLDZ)){
+
+               //Moving the projectile to a new position if the position is empty
+               if(world[(int)currProjectile->x][(int)currProjectile->y][(int)currProjectile->z] == 0){
+                  setMobPosition(currProjectile->id, currProjectile->x, currProjectile->y, currProjectile->z, 0.0);
+               }
+               else{
+                  //Making a crater if the position has a cube in it
+                  for(j = 5; j >= 1; j -= 2){
+                     for(k = 0; k <= j/2; k++){
+                        for(l = 0; l <= j/2; l++){
+                           world[(int)(currProjectile->x + k)][(int)currProjectile->y][(int)(currProjectile->z + l)] = 0;
+                           world[(int)(currProjectile->x - k)][(int)currProjectile->y][(int)(currProjectile->z - l)] = 0;
+                           world[(int)(currProjectile->x + k)][(int)currProjectile->y][(int)(currProjectile->z - l)] = 0;
+                           world[(int)(currProjectile->x - k)][(int)currProjectile->y][(int)(currProjectile->z + l)] = 0;
+                        }
+                     }
+                     currProjectile->y -= 1.0;
+                  }
+                  hideMob(currProjectile->id);
+                  hasFired = 0;
+                  currProjectile->isActive = 0;
+                  currProjectile->currTime = 0.0;
+
+               }
             }
+            //Out of map
             else{
-               printf("boom!\n");
+               printf("Out of map, on X or Z plane\n");
                hideMob(currProjectile->id);
                hasFired = 0;
                currProjectile->isActive = 0;
@@ -523,30 +508,60 @@ void moveProjectiles(){
 
 void shoot(){
    hasFired = 1;
-   float x,y,z;
+   float x,y,z,vel_zx;
    float roll,yaw,pitch;
    float i = 0;
+   float swapVal;
+   int directionY, quadrent;
 
    getViewPosition(&x, &y, &z);
    getViewOrientation(&roll, &yaw, &pitch);
    
-   // printf("x: %f, y: %f, z: %f\n",x, y, z);
-   // printf("roll: %f, yaw: %f, pitch: %f\n", roll, yaw, pitch);
-   
    do{
+      //Setting all of the vales for time shot
       Projectile * tmp = projArray[(int)i];
       if(tmp->isActive == 0){
          tmp->id = i;
          tmp->ang = angle;
          tmp->vel = velocity;
-         tmp->x = abs(x);
-         tmp->y = abs(y);
-         tmp->z = abs(z);
+         tmp->x = -1 * x;
+         tmp->y = -1 * y;
+         tmp->z = -1 * z;
          tmp->rx = roll;
          tmp->ry = yaw;
-         tmp->rz = pitch;
          tmp->isActive = 1;
-         createMob(tmp->id, abs(x), abs(y), abs(z), roll);
+
+         //Limiting player direction to one quadrent
+         directionY = (int)yaw % 90;
+
+         //Findig quadrent looking in
+         quadrent = findQuadrent((int)yaw % 360);
+
+         //Calculating the initial velocity that the projectile will be moving
+         vel_zx = cos((toRad(angle))) * velocity;
+         tmp->vel_y = sin((toRad(angle))) * velocity;
+         tmp->vel_x = cos((toRad(directionY))) * vel_zx;
+         tmp->vel_z = sin((toRad(directionY))) * vel_zx;
+
+         //Modifing the velocities depending on the quadrent looking at
+         if(quadrent == 1){
+            tmp->vel_x *= -1;
+            swapVal = tmp->vel_z;
+            tmp->vel_z = tmp->vel_x;
+            tmp->vel_x = swapVal;
+         }
+         else if(quadrent == 3){
+            tmp->vel_z *= -1;
+            swapVal = tmp->vel_x;
+            tmp->vel_x = tmp->vel_z;
+            tmp->vel_z = swapVal;
+         }
+         else if(quadrent == 4){
+            tmp->vel_x *= -1;
+            tmp->vel_z *= -1;
+         }
+
+         createMob(tmp->id, x, y, z, roll);
          break;
       }
       i++;
@@ -562,23 +577,17 @@ void mouse(int button, int state, int x, int y) {
    
 
    if (button == GLUT_LEFT_BUTTON){
-      // printf("left button - ");
       if(state == GLUT_DOWN)
          shoot();
    }
-
-   else if (button == GLUT_MIDDLE_BUTTON){
-      // printf("middle button - ");
-   }
-   else{
-      // printf("right button - ");
+   else if (button == GLUT_RIGHT_BUTTON){
       if (state == GLUT_UP){
-         // printf("up - ");
+
          xUp = (float)x;
          yUp = (float)y;
+         
          xDifference = (xUp - xDown);
          yDifference = (yUp - yDown);
-         // printf("xUp: %f, xDown: %f, yUp: %f, yDown: %f \nxDifference: %f, yDifference: %f \n", xUp, xDown, yUp, yDown, xDifference, yDifference);
 
          if(xDifference > 0){
             if(angle + xDifference < 90.0){
@@ -605,34 +614,17 @@ void mouse(int button, int state, int x, int y) {
                printf("Velocity: %f\n", velocity);
             }
          }
-
-         // printf("xDifference: %f, yDifference: %f\n", xDifference, yDifference);
       }
       else{
          xDown = (float)x;
          yDown = (float)y;
       }
    }
-
-   // if (state == GLUT_UP){
-   //    printf("up - ");
-   //    xUp = x;
-   //    yUp = y;
-   // }
-   // else{
-   //    printf("down - ");
-   //    xDown = x;
-   //    yDown = y;
-   // }
-
-   // printf("%d %d\n", x, y);
 }
-
-
 
 int main(int argc, char** argv)
 {
-int i, j, k;
+   int i, j, k;
 	/* initialize the graphics system */
    graphicsInit(&argc, argv);
 
@@ -684,10 +676,9 @@ int i, j, k;
    } else {
 
 	/* your code to build the world goes here */
-      genWorld();      
+      genWorld(); 
       genClouds();
       initProjectiles();
-      currentTime = glutGet(GLUT_ELAPSED_TIME);
    }
 
 
@@ -696,4 +687,3 @@ int i, j, k;
    glutMainLoop();
    return 0; 
 }
-
