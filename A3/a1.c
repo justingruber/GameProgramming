@@ -27,6 +27,7 @@ extern GLfloat* getLightPosition();
 extern void setViewPosition(float, float, float);
 extern void getViewPosition(float *, float *, float *);
 extern void getOldViewPosition(float *, float *, float *);
+extern void setViewOrientation(float, float, float);
 extern void getViewOrientation(float *, float *, float *);
 
 	/* add cube to display list so it will be drawn */
@@ -44,6 +45,13 @@ extern void setPlayerPosition(int, float, float, float, float);
 extern void hidePlayer(int);
 extern void showPlayer(int);
 
+	/* 2D drawing functions */
+extern void  draw2Dline(int, int, int, int, int);
+extern void  draw2Dbox(int, int, int, int);
+extern void  draw2Dtriangle(int, int, int, int, int, int);
+extern void  set2Dcolour(float []);
+
+
 	/* flag which is set to 1 when flying behaviour is desired */
 extern int flycontrol;
 	/* flag used to indicate that the test world should be used */
@@ -56,6 +64,10 @@ extern int dig;
 extern int netClient;
 	/* flag indicates the program is a server when set = 1 */
 extern int netServer; 
+	/* size of the window in pixels */
+extern int screenWidth, screenHeight;
+	/* flag indicates if map is to be printed */
+extern int displayMap;
 
 	/* frustum corner coordinates, used for visibility determination  */
 extern float corners[4][3];
@@ -69,6 +81,7 @@ extern float vpx, vpy, vpz;
 extern float oldvpx, oldvpy, oldvpz;
 
 /********* end of extern variable declarations **************/
+
 
 typedef struct projectile {
    float ang;
@@ -89,8 +102,8 @@ void moveProjectiles();
 float findHeightAtTimeT(float, float, float, float, int);
 float findDistancetAtTimeT(float, float, float, float, int);
 int hasFired = 0;
-float velocity = 5;
-float angle = 15.0;
+float velocity = 1.0;
+float angle = 10.0;
 float xUp = 0, xDown = 0, xDifference = 0;
 float yUp = 0, yDown = 0, yDifference = 0;
 Projectile * projArray[MOB_COUNT];
@@ -104,7 +117,6 @@ Projectile * projArray[MOB_COUNT];
 	   will be the negative value of the array indices */
 void collisionResponse() {
 
-	/* your collision code goes here */
    float currx = 0, curry = 0, currz = 0;
    float prevx = 0, prevy = 0, prevz = 0;
    float xaxis;
@@ -154,6 +166,35 @@ void collisionResponse() {
 }
 
 
+	/******* draw2D() *******/
+	/* draws 2D shapes on screen */
+	/* use the following functions: 			*/
+	/*	draw2Dline(int, int, int, int, int);		*/
+	/*	draw2Dbox(int, int, int, int);			*/
+	/*	draw2Dtriangle(int, int, int, int, int, int);	*/
+	/*	set2Dcolour(float []); 				*/
+	/* colour must be set before other functions are called	*/
+void draw2D() {
+
+   if (testWorld) {
+		/* draw some sample 2d shapes */
+      GLfloat green[] = {0.0, 0.5, 0.0, 0.5};
+      set2Dcolour(green);
+      draw2Dline(0, 0, 500, 500, 15);
+      draw2Dtriangle(0, 0, 200, 200, 0, 200);
+
+      GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
+      set2Dcolour(black);
+      draw2Dbox(500, 380, 524, 388);
+   } else {
+
+	/* your code goes here */
+
+   }
+
+}
+
+
 	/*** update() ***/
 	/* background process, it is called when there are no other events */
 	/* -used to control animations and perform calculations while the  */
@@ -166,6 +207,7 @@ void update() {
 	/* sample animation for the test world, don't remove this code */
 	/* -demo of animating mobs */
    if (testWorld) {
+
 	/* sample of rotation and positioning of mob */
 	/* coordinates for mob 0 */
       static float mob0x = 50.0, mob0y = 25.0, mob0z = 52.0;
@@ -212,7 +254,9 @@ void update() {
       mob1ry += 1.0;
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
+
    } else {
+
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
 
       //Moddig the time that has passed since init() was called, using this as timing for update calls.
@@ -222,7 +266,6 @@ void update() {
          genClouds();
       if(timeElapsed % 150 > 130)
          moveClouds();
-
    }
 
    if(flycontrol == 0 ){
@@ -568,13 +611,13 @@ void shoot(){
    }while(i < MOB_COUNT);
 }
 
+
 	/* called by GLUT when a mouse button is pressed or released */
 	/* -button indicates which button was pressed or released */
 	/* -state indicates a button down or button up event */
 	/* -x,y are the screen coordinates when the mouse is pressed or */
 	/*  released */ 
 void mouse(int button, int state, int x, int y) {
-   
 
    if (button == GLUT_LEFT_BUTTON){
       if(state == GLUT_DOWN)
@@ -622,9 +665,11 @@ void mouse(int button, int state, int x, int y) {
    }
 }
 
+
+
 int main(int argc, char** argv)
 {
-   int i, j, k;
+int i, j, k;
 	/* initialize the graphics system */
    graphicsInit(&argc, argv);
 
@@ -674,8 +719,6 @@ int main(int argc, char** argv)
       createPlayer(0, 52.0, 27.0, 52.0, 0.0);
 
    } else {
-
-	/* your code to build the world goes here */
       genWorld(); 
       genClouds();
       initProjectiles();
