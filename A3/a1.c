@@ -191,29 +191,29 @@ void draw2D() {
       GLfloat green[] = {0.0, 0.5, 0.0, 0.5};
       set2Dcolour(green);
       // printf("screenHeight %d, screenWidth:%d\n", screenHeight, screenWidth);
-      draw2Dbox(2, (int)((float)screenHeight * 0.8 ),  (int)((float)screenWidth * 0.3), screenHeight - 2);
+      draw2Dbox(2, (int)((float)screenHeight * 0.8 ),  (int)((float)screenWidth * 0.2), screenHeight - 2);
       // - (int)((float)screenHeight * 0.2)
       // draw2Dbox(200,200,200,200);q
       GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
       set2Dcolour(black);
-      // (int)((float)screenWidth * 0.3)
-      // (int)((float)screenHeight * 0.8 )
+
       //Bottom Line
-      draw2Dline(0, (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.3), (int)((float)screenHeight * 0.8 ), 5);
+      draw2Dline(0, (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.2), (int)((float)screenHeight * 0.8 ), 5);
       
       //Top line
-      draw2Dline(0, screenHeight, (int)((float)screenWidth * 0.3), screenHeight, 5);
+      draw2Dline(0, screenHeight, (int)((float)screenWidth * 0.2), screenHeight, 5);
 
       //Left line
       draw2Dline(0, (int)((float)screenHeight * 0.8 ), 0, screenHeight, 5);
 
       //Right line
-      draw2Dline((int)((float)screenWidth * 0.3), (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.3), screenHeight, 5);
+      draw2Dline((int)((float)screenWidth * 0.2), (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.2), screenHeight, 5);
 
       //Grid
+      // int i = 0;
       // do{
 
-      // }while(i < )
+      // }while(i < WORLDZ);
 
 
    }
