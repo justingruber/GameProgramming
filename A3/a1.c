@@ -188,7 +188,33 @@ void draw2D() {
       draw2Dbox(500, 380, 524, 388);
    } else {
 
-	/* your code goes here */
+      GLfloat green[] = {0.0, 0.5, 0.0, 0.5};
+      set2Dcolour(green);
+      // printf("screenHeight %d, screenWidth:%d\n", screenHeight, screenWidth);
+      draw2Dbox(2, (int)((float)screenHeight * 0.8 ),  (int)((float)screenWidth * 0.3), screenHeight - 2);
+      // - (int)((float)screenHeight * 0.2)
+      // draw2Dbox(200,200,200,200);q
+      GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
+      set2Dcolour(black);
+      // (int)((float)screenWidth * 0.3)
+      // (int)((float)screenHeight * 0.8 )
+      //Bottom Line
+      draw2Dline(0, (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.3), (int)((float)screenHeight * 0.8 ), 5);
+      
+      //Top line
+      draw2Dline(0, screenHeight, (int)((float)screenWidth * 0.3), screenHeight, 5);
+
+      //Left line
+      draw2Dline(0, (int)((float)screenHeight * 0.8 ), 0, screenHeight, 5);
+
+      //Right line
+      draw2Dline((int)((float)screenWidth * 0.3), (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.3), screenHeight, 5);
+
+      //Grid
+      // do{
+
+      // }while(i < )
+
 
    }
 
@@ -254,6 +280,11 @@ void update() {
       mob1ry += 1.0;
       if (mob1ry > 360.0) mob1ry -= 360.0;
     /* end testworld animation */
+      int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
+
+      //Moddig the time that has passed since init() was called, using this as timing for update calls.
+      if(timeElapsed % 50 > 40)
+         moveProjectiles();
 
    } else {
 
@@ -488,7 +519,7 @@ void moveProjectiles(){
       if(currProjectile->isActive == 1){
 
          //Bounds checking on current projectile to make sure it is within the world
-         if(currProjectile->x >= WORLDX || currProjectile->z >= WORLDZ){
+         if(currProjectile->x >= WORLDX || currProjectile->z >= WORLDZ || currProjectile->y < 0){
             hideMob(currProjectile->id);
             hasFired = 0;
             currProjectile->isActive = 0;
@@ -667,9 +698,8 @@ void mouse(int button, int state, int x, int y) {
 
 
 
-int main(int argc, char** argv)
-{
-int i, j, k;
+int main(int argc, char** argv){
+   int i, j, k;
 	/* initialize the graphics system */
    graphicsInit(&argc, argv);
 
@@ -721,8 +751,8 @@ int i, j, k;
    } else {
       genWorld(); 
       genClouds();
-      initProjectiles();
    }
+   initProjectiles();
 
 
 	/* starts the graphics processing loop */
