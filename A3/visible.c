@@ -12,7 +12,7 @@
 
 #define OCTREE_LEVEL 1
 
-extern void gradphicsInit(int *, char **);
+extern void graphicsInit(int *, char **);
 extern void setLightPosition(GLfloat, GLfloat, GLfloat);
 extern GLfloat* getLightPosition();
 

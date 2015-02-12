@@ -187,34 +187,68 @@ void draw2D() {
       set2Dcolour(black);
       draw2Dbox(500, 380, 524, 388);
    } else {
+      int mapMaxHeight, mapMaxWidth, mapHeightOffset, mapWidthOffset;
+      int borderWidth = 3;
+      int gridWidth = 1;
+      int mapScale;
+      if(displayMap == 0){
 
-      GLfloat green[] = {0.0, 0.5, 0.0, 0.5};
-      set2Dcolour(green);
-      // printf("screenHeight %d, screenWidth:%d\n", screenHeight, screenWidth);
-      draw2Dbox(2, (int)((float)screenHeight * 0.8 ),  (int)((float)screenWidth * 0.2), screenHeight - 2);
-      // - (int)((float)screenHeight * 0.2)
-      // draw2Dbox(200,200,200,200);q
-      GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
-      set2Dcolour(black);
+      }
+      else {
 
-      //Bottom Line
-      draw2Dline(0, (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.2), (int)((float)screenHeight * 0.8 ), 5);
-      
-      //Top line
-      draw2Dline(0, screenHeight, (int)((float)screenWidth * 0.2), screenHeight, 5);
+         if(displayMap == 1){
+            mapMaxHeight = (int)((float)screenHeight * 0.7);
+            mapMaxWidth = (int)((float)screenWidth * 0.3);
+            mapHeightOffset = 0;
+            mapWidthOffset = 0;
+            mapScale = 2;
+         }
+         else if(displayMap == 2){
+            mapMaxHeight = (int)((float)screenHeight * 0.3);
+            mapMaxWidth = (int)((float)screenWidth * 0.7);
+            mapHeightOffset = (int)((float)screenHeight * 0.7);
+            mapWidthOffset = (int)((float)screenWidth * 0.2);
+            mapScale = 4;
+         }
 
-      //Left line
-      draw2Dline(0, (int)((float)screenHeight * 0.8 ), 0, screenHeight, 5);
+         GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
+         set2Dcolour(black);
 
-      //Right line
-      draw2Dline((int)((float)screenWidth * 0.2), (int)((float)screenHeight * 0.8 ), (int)((float)screenWidth * 0.2), screenHeight, 5);
+         //Bottom Line
+         draw2Dline(mapWidthOffset, mapMaxHeight, mapMaxWidth, mapMaxHeight, borderWidth);
+         
+         //Top line
+         draw2Dline(mapWidthOffset, screenHeight, mapMaxWidth, screenHeight, borderWidth);
 
-      //Grid
-      // int i = 0;
-      // do{
+         //Left line
+         draw2Dline(mapWidthOffset, mapMaxHeight, mapWidthOffset, screenHeight, borderWidth);
 
-      // }while(i < WORLDZ);
+         //Right line
+         draw2Dline(mapMaxWidth, mapMaxHeight, mapMaxWidth, screenHeight, borderWidth);
 
+         //Grid
+         int i = 0;
+
+         //Vertical Lines
+         do{         
+            draw2Dline(i + mapWidthOffset, mapMaxHeight, i + mapWidthOffset, screenHeight, gridWidth);   
+            i += mapScale;
+         }while(i + mapWidthOffset < mapMaxWidth);
+         
+         //Horizontal Lines 
+         i = 0;
+         do{
+            draw2Dline(mapWidthOffset, mapMaxHeight + i, mapMaxWidth, mapMaxHeight + i, gridWidth);
+            i += mapScale;
+         }while(i - mapHeightOffset < mapMaxHeight);
+
+
+         //Background of map   
+         GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
+         set2Dcolour(white);
+         // printf("screenHeight %d, screenWidth:%d\n", screenHeight, screenWidth);
+         draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
+      }
 
    }
 

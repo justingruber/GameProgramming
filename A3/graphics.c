@@ -670,9 +670,9 @@ static int lighton = 1;
 	/* load a texture from a file */
 	/* not currently used */
 void loadTexture() {
-FILE *fp;
-int  i, j;
-int  red, green, blue;
+   FILE *fp;
+   int  i, j;
+   int  red, green, blue;
 
    if ((fp = fopen("image.txt", "r")) == 0) {
       printf("Error, failed to find the file named image.txt.\n");
