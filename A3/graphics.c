@@ -90,7 +90,7 @@ void  set2Dcolour(float []);
 	/* player control functions */
 	/* set all player location, rotation, and visibility values to zero */
 void initPlayerArray() {
-int i;
+   int i;
    for (i=0; i<MOB_COUNT; i++) {
       playerPosition[i][0] = 0.0;
       playerPosition[i][1] = 0.0;
@@ -149,7 +149,7 @@ void showPlayer(int number) {
 	/* mob control functions */
 	/* set all mob location, rotation, and visibility values to zero */
 void initMobArray() {
-int i;
+   int i;
    for (i=0; i<MOB_COUNT; i++) {
       mobPosition[i][0] = 0.0;
       mobPosition[i][1] = 0.0;
@@ -270,8 +270,7 @@ int addDisplayList(int x, int y, int z) {
 
 
 /*  Initialize material property and light source.  */
-void init (void)
-{
+void init (void){
    GLfloat light_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
    GLfloat light_diffuse[] = { 0.8, 0.8, 0.8, 1.0 };
    GLfloat light_specular[] = { 0.5, 0.5, 0.5, 1.0 };
@@ -313,29 +312,31 @@ void init (void)
 
 	/* draw cube in world[i][j][k] */
 void drawCube(int i, int j, int k) {
-GLfloat blue[]  = {0.0, 0.0, 1.0, 1.0};
-GLfloat red[]   = {1.0, 0.0, 0.0, 1.0};
-GLfloat green[] = {0.0, 1.0, 0.0, 1.0};
-GLfloat yellow[]   = {1.0, 1.0, 0.0, 1.0};
-GLfloat purple[]   = {1.0, 0.0, 1.0, 1.0};
-GLfloat orange[]   = {1.0, 0.64, 0.0, 1.0};
-GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
+   GLfloat blue[]  = {0.0, 0.0, 1.0, 1.0};
+   GLfloat red[]   = {1.0, 0.0, 0.0, 1.0};
+   GLfloat green[] = {0.0, 1.0, 0.0, 1.0};
+   GLfloat yellow[]   = {1.0, 1.0, 0.0, 1.0};
+   GLfloat purple[]   = {1.0, 0.0, 1.0, 1.0};
+   GLfloat orange[]   = {1.0, 0.64, 0.0, 1.0};
+   GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
+   GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
 
-GLfloat dblue[]  = {0.0, 0.0, 0.5, 1.0};
-GLfloat dred[]   = {0.5, 0.0, 0.0, 1.0};
-GLfloat dgreen[] = {0.0, 0.5, 0.0, 1.0};
-GLfloat dyellow[]   = {0.5, 0.5, 0.0, 1.0};
-GLfloat dpurple[]   = {0.5, 0.0, 0.5, 1.0};
-GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
+   GLfloat dblue[]  = {0.0, 0.0, 0.5, 1.0};
+   GLfloat dred[]   = {0.5, 0.0, 0.0, 1.0};
+   GLfloat dgreen[] = {0.0, 0.5, 0.0, 1.0};
+   GLfloat dyellow[]   = {0.5, 0.5, 0.0, 1.0};
+   GLfloat dpurple[]   = {0.5, 0.0, 0.5, 1.0};
+   GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
 
 
 		/* select colour based on value in the world array */
    glMaterialfv(GL_FRONT, GL_SPECULAR, white);
 
    if (world[i][j][k] == 1) {
+      
       glMaterialfv(GL_FRONT, GL_AMBIENT, dgreen);
-      glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, green);      
+
    }
    else if (world[i][j][k] == 2) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT, dblue);
@@ -375,14 +376,13 @@ GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
 
 
 	/* called each time the world is redrawn */
-void display (void)
-{
-GLfloat skyblue[]  = {0.52, 0.74, 0.84, 1.0};
-GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
-GLfloat red[] = {1.0, 0.0, 0.0, 1.0};
-GLfloat gray[] = {0.3, 0.3, 0.3, 1.0};
-GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
-int i, j, k;
+void display (void){
+   GLfloat skyblue[]  = {0.52, 0.74, 0.84, 1.0};
+   GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
+   GLfloat red[] = {1.0, 0.0, 0.0, 1.0};
+   GLfloat gray[] = {0.3, 0.3, 0.3, 1.0};
+   GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
+   int i, j, k;
 
    buildDisplayList();
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -396,7 +396,7 @@ int i, j, k;
 	/* Subtract 0.5 to raise viewpoint slightly above objects. */
 	/* Gives the impression of a head on top of a body. */
    glTranslatef(vpx, vpy - 0.5, vpz);
-//   glTranslatef(vpx, vpy, vpz);
+   //   glTranslatef(vpx, vpy, vpz);
 
 
 	/* set viewpoint light position */
@@ -554,10 +554,9 @@ void reshape(int w, int h)
 }
 
 	/* respond to keyboard events */
-void keyboard(unsigned char key, int x, int y)
-{
-float rotx, roty;
-static int lighton = 1;
+void keyboard(unsigned char key, int x, int y){
+   float rotx, roty;
+   static int lighton = 1;
 
    switch (key) {
       case 27:
@@ -674,7 +673,7 @@ void loadTexture() {
    int  i, j;
    int  red, green, blue;
 
-   if ((fp = fopen("image.txt", "r")) == 0) {
+   if ((fp = fopen("grass.bmp", "r")) == 0) {
       printf("Error, failed to find the file named image.txt.\n");
       exit(0);
    } 

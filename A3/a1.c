@@ -79,6 +79,9 @@ extern void tree(float, float, float, float, float, float, int);
 
 extern float vpx, vpy, vpz;
 extern float oldvpx, oldvpy, oldvpz;
+extern GLubyte  Image[64][64][4];
+extern GLuint   textureID[1];
+
 
 /********* end of extern variable declarations **************/
 
@@ -93,7 +96,6 @@ typedef struct projectile {
    float currTime;
    float vel_y, vel_x, vel_z;
    int quadrent;
-
 } Projectile;
 
 void genClouds();
@@ -187,28 +189,34 @@ void draw2D() {
       set2Dcolour(black);
       draw2Dbox(500, 380, 524, 388);
    } else {
+
       int mapMaxHeight, mapMaxWidth, mapHeightOffset, mapWidthOffset;
       int borderWidth = 3;
       int gridWidth = 1;
-      int mapScale;
-      if(displayMap == 0){
-
-      }
-      else {
+      int mapVertScale, mapHorizScale;
+      float px,py,pz;
+      
+      if(displayMap != 0){
 
          if(displayMap == 1){
             mapMaxHeight = (int)((float)screenHeight * 0.7);
             mapMaxWidth = (int)((float)screenWidth * 0.3);
             mapHeightOffset = 0;
             mapWidthOffset = 0;
-            mapScale = 2;
+            // mapVertScale = 3;
+            // mapHorizScale = 5;
+            mapVertScale = (int)((float)(mapMaxWidth) / 100.0);
+            mapHorizScale = (int)((float)(mapMaxHeight) / 100.0);
          }
          else if(displayMap == 2){
-            mapMaxHeight = (int)((float)screenHeight * 0.3);
-            mapMaxWidth = (int)((float)screenWidth * 0.7);
-            mapHeightOffset = (int)((float)screenHeight * 0.7);
-            mapWidthOffset = (int)((float)screenWidth * 0.2);
-            mapScale = 4;
+            mapMaxHeight = (int)((float)screenHeight * 0.1);
+            mapMaxWidth = (int)((float)screenWidth * 0.9);
+            mapHeightOffset = (int)((float)screenHeight * 0.9);
+            mapWidthOffset = (int)((float)screenWidth * 0.1);
+            // mapVertScale = 8;
+            // mapHorizScale = 8;
+            mapVertScale = (int)((float)(mapMaxWidth) / 100.0);
+            mapHorizScale = (int)((float)(mapMaxHeight + mapHeightOffset) / 100.0);
          }
 
          GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
@@ -229,29 +237,39 @@ void draw2D() {
          //Grid
          int i = 0;
 
-         //Vertical Lines
+         
+         // Vertical Lines
          do{         
             draw2Dline(i + mapWidthOffset, mapMaxHeight, i + mapWidthOffset, screenHeight, gridWidth);   
-            i += mapScale;
+            i += mapVertScale;
          }while(i + mapWidthOffset < mapMaxWidth);
-         
+
          //Horizontal Lines 
          i = 0;
          do{
             draw2Dline(mapWidthOffset, mapMaxHeight + i, mapMaxWidth, mapMaxHeight + i, gridWidth);
-            i += mapScale;
+            i += mapHorizScale;
          }while(i - mapHeightOffset < mapMaxHeight);
 
+         getViewPosition(&px, &py, &pz);
+         px *= -1;
+         pz *= -1;
+         // printf("x: %f, y:%f, z: %f\n", px, py,pz);
+         int x1,x2,y1,y2;
+         x1 = ((int)(px * 3.05) + mapWidthOffset);
+         x2 = x1 + mapVertScale;
+         y1 = mapMaxHeight + ((int)(pz * 2.25) + mapHeightOffset);
+         y2 = y1 + mapHorizScale;
+         // printf("x1: %d, y1:%d, x2: %d, y2: %d\n", x1, y1, x2, y2);
+         draw2Dbox(x1,y1,x2,y2);
 
          //Background of map   
          GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
          set2Dcolour(white);
-         // printf("screenHeight %d, screenWidth:%d\n", screenHeight, screenWidth);
          draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
       }
 
    }
-
 }
 
 
@@ -325,7 +343,7 @@ void update() {
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
 
       //Moddig the time that has passed since init() was called, using this as timing for update calls.
-      if(timeElapsed % 50 > 40)
+      if(timeElapsed % 50 > 30)
          moveProjectiles();
       if(timeElapsed % 1000 > 950)
          genClouds();
@@ -569,7 +587,7 @@ void moveProjectiles(){
 
             //Decrementing the y value to get an arc, and setting a cap for the degradation
             if(currProjectile->vel_y > - 5)
-               currProjectile->vel_y -= 0.75;
+               currProjectile->vel_y -= 0.15;
 
             //Checking max and min bounds of the projectile 
             if((currProjectile->x > 0 && currProjectile->x < WORLDX) &&
@@ -783,6 +801,7 @@ int main(int argc, char** argv){
       createPlayer(0, 52.0, 27.0, 52.0, 0.0);
 
    } else {
+      loadTexture();
       genWorld(); 
       genClouds();
    }
