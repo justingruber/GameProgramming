@@ -190,10 +190,10 @@ void draw2D() {
       draw2Dbox(500, 380, 524, 388);
    } else {
 
-      int mapMaxHeight, mapMaxWidth, mapHeightOffset, mapWidthOffset;
-      int borderWidth = 3;
-      int gridWidth = 1;
-      int mapVertScale, mapHorizScale;
+      register int mapMaxHeight, mapMaxWidth, mapHeightOffset, mapWidthOffset;
+      register int borderWidth = 3;
+      register int gridWidth = 1;
+      register int mapVertScale, mapHorizScale;
       float px,py,pz;
       
       if(displayMap != 0){
@@ -235,7 +235,7 @@ void draw2D() {
          draw2Dline(mapMaxWidth, mapMaxHeight, mapMaxWidth, screenHeight, borderWidth);
 
          //Grid
-         int i = 0;
+         register int i = 0;
 
          
          // Vertical Lines
@@ -254,19 +254,28 @@ void draw2D() {
          getViewPosition(&px, &py, &pz);
          px *= -1;
          pz *= -1;
-         // printf("x: %f, y:%f, z: %f\n", px, py,pz);
-         int x1,x2,y1,y2;
-         x1 = ((int)(px * 3.05) + mapWidthOffset);
-         x2 = x1 + mapVertScale;
-         y1 = mapMaxHeight + ((int)(pz * 2.25) + mapHeightOffset);
-         y2 = y1 + mapHorizScale;
-         // printf("x1: %d, y1:%d, x2: %d, y2: %d\n", x1, y1, x2, y2);
-         draw2Dbox(x1,y1,x2,y2);
+         register int x1,x2,y1,y2;
+         static int tmpscreenWidth = 0;
+
+         if(displayMap == 1){
+            x1 = ((int)(px * 3.05) + mapWidthOffset);
+            x2 = x1 + mapVertScale;
+            y1 = mapMaxHeight + ((int)(pz * 2.25) + mapHeightOffset);
+            y2 = y1 + mapHorizScale;
+            draw2Dbox(x1,y1,x2,y2);
+         }
+         else{
+            x1 = ((int)(px * 9.15) + mapWidthOffset);
+            x2 = x1 + mapVertScale;
+            y1 = mapMaxHeight + ((int)(pz * 6.9));
+            y2 = y1 + mapHorizScale;
+            draw2Dbox(x1,y1,x2,y2);
+         }
 
          //Background of map   
          GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
          set2Dcolour(white);
-         draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
+         // draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
       }
 
    }
@@ -361,7 +370,7 @@ void update() {
 }
 
 void moveClouds(){
-   int x, z;
+   register int x, z;
    //Pulling the clouds though the map (checking for y-2 because of artifacts)
    for(x = 0; x < WORLDX; x++){
       for(z = 0; z < WORLDZ; z++){
@@ -556,8 +565,8 @@ int findQuadrent(float direction){
 }
 
 void moveProjectiles(){
-   int i = 0;
-   int j = 5,k = 0,l = 0;
+   register int i = 0;
+   register int j = 5,k = 0,l = 0;
    float x,y,z;
    float direction;
    float vel_x, vel_z, vel_zx, vel_y;
@@ -806,6 +815,13 @@ int main(int argc, char** argv){
       genClouds();
    }
    initProjectiles();
+
+   if(netClient){
+      printf("client\n");
+   }
+   else if(netServer){
+      printf("server\n");
+   }
 
 
 	/* starts the graphics processing loop */
