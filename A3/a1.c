@@ -11,6 +11,14 @@
 #include <string.h>
 #include <math.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+
+
 #include "graphics.h"
 
 	/* mouse function called by GLUT when a button is pressed or released */
@@ -98,18 +106,44 @@ typedef struct projectile {
    int quadrent;
 } Projectile;
 
+#define PORT "9734"
+#define MAXBUFFER 255
+#define DESTINATION "127.0.0.1"
+#define PARAMS 10
+
 void genClouds();
 void moveClouds();
 void moveProjectiles();
 float findHeightAtTimeT(float, float, float, float, int);
 float findDistancetAtTimeT(float, float, float, float, int);
+void shoot();
 int hasFired = 0;
 float velocity = 1.0;
 float angle = 10.0;
 float xUp = 0, xDown = 0, xDifference = 0;
 float yUp = 0, yDown = 0, yDifference = 0;
 Projectile * projArray[MOB_COUNT];
+int hasConnection = -1;
 
+//Server vars
+int server_socket;
+struct addrinfo server_hints, *host_server_info, *server_p;
+int server_returnValue;
+int server_nbytes;
+char send_msg[MAXBUFFER];
+
+//Client vars
+int client_socket;
+struct addrinfo client_hints, *clients_server_info, * client_p;
+int client_returnValue;
+int client_nbytes;
+struct sockaddr_storage server_address;
+char recv_msg[MAXBUFFER];
+socklen_t addr_len;
+char s[INET6_ADDRSTRLEN];
+char * token;
+
+void update();
 
 	/*** collisionResponse() ***/
 	/* -performs collision detection and response */
@@ -258,9 +292,13 @@ void draw2D() {
          static int tmpscreenWidth = 0;
 
          if(displayMap == 1){
-            x1 = ((int)(px * 3.05) + mapWidthOffset);
+            // x1 = ((int)(px * 3.05) + mapWidthOffset);
+            x1 = mapMaxWidth - ((int)((px * ((float)screenWidth / (float)mapMaxWidth))) + mapWidthOffset);
+
             x2 = x1 + mapVertScale;
-            y1 = mapMaxHeight + ((int)(pz * 2.25) + mapHeightOffset);
+            // y1 = mapMaxHeight + ((int)(pz * 2.25) + mapHeightOffset);
+            y1 = mapMaxHeight + ((int)((pz * ((float)screenHeight / (float)mapMaxHeight))*1.75) + mapHeightOffset);
+            
             y2 = y1 + mapHorizScale;
             draw2Dbox(x1,y1,x2,y2);
          }
@@ -272,18 +310,68 @@ void draw2D() {
             draw2Dbox(x1,y1,x2,y2);
          }
 
-         //Background of map   
+         //Background of map 
          GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
          set2Dcolour(white);
-         // draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
+         //Uncomment the line to draw the white background for the minimap
+         draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
       }
 
    }
 }
 
 
-	/*** update() ***/
-	/* background process, it is called when there are no other events */
+/*
+- player position and orientation
+- the colour and location of blocks in the world, including when blocks are removed during game play
+- the location of a shot once the player fires one
+*/
+
+void connectToServer(){
+
+   memset(&client_hints, 0, sizeof(client_hints));
+   client_hints.ai_family = AF_UNSPEC;
+   client_hints.ai_socktype = SOCK_DGRAM;
+   client_hints.ai_flags = AI_PASSIVE;
+
+   if ((client_returnValue = getaddrinfo(NULL, PORT, &client_hints, &clients_server_info)) != 0) {
+      fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(client_returnValue));
+      return;
+   }
+
+   for(client_p = clients_server_info; client_p != NULL; client_p = client_p->ai_next){
+      if((client_socket = socket(client_p->ai_family, client_p->ai_socktype, client_p->ai_protocol)) == -1){
+         continue;
+      }
+      if(bind(client_socket, client_p->ai_addr, client_p->ai_addrlen) == -1){
+         fprintf(stderr, "Error: Bind failed.\n");
+         close(client_socket);
+      }
+      break;
+   }
+}
+
+void initServer(){
+
+   memset(&server_hints, 0, sizeof(server_hints));
+   server_hints.ai_family = AF_UNSPEC;
+   server_hints.ai_socktype = SOCK_DGRAM;
+
+   if((server_returnValue = getaddrinfo(DESTINATION, PORT, &server_hints, &host_server_info) != 0) ){
+      fprintf(stderr, "Error: getaddrinfo %s\n", gai_strerror(server_returnValue));
+      return;
+   }
+
+   for(server_p = host_server_info; server_p != NULL; server_p = server_p->ai_next){
+      if((server_socket = socket(server_p->ai_family, server_p->ai_socktype, server_p->ai_protocol)) == -1){
+         continue;
+      }
+      break;
+   }
+}
+
+   /*** update() ***/
+   /* background process, it is called when there are no other events */
 	/* -used to control animations and perform calculations while the  */
 	/*  system is running */
 	/* -gravity must also implemented here, duplicate collisionResponse */
@@ -295,21 +383,21 @@ void update() {
 	/* -demo of animating mobs */
    if (testWorld) {
 
-	/* sample of rotation and positioning of mob */
-	/* coordinates for mob 0 */
+	  /* sample of rotation and positioning of mob */
+	  /* coordinates for mob 0 */
       static float mob0x = 50.0, mob0y = 25.0, mob0z = 52.0;
       static float mob0ry = 0.0;
       static int increasingmob0 = 1;
-	/* coordinates for mob 1 */
+	  /* coordinates for mob 1 */
       static float mob1x = 50.0, mob1y = 25.0, mob1z = 52.0;
       static float mob1ry = 0.0;
       static int increasingmob1 = 1;
 
-	/* move mob 0 and rotate */
-	/* set mob 0 position */
+	  /* move mob 0 and rotate */
+	  /* set mob 0 position */
       setMobPosition(0, mob0x, mob0y, mob0z, mob0ry);
 
-	/* move mob 0 in the x axis */
+	  /* move mob 0 in the x axis */
       if (increasingmob0 == 1)
          mob0x += 0.2;
       else 
@@ -317,16 +405,16 @@ void update() {
       if (mob0x > 50) increasingmob0 = 0;
       if (mob0x < 30) increasingmob0 = 1;
 
-	/* rotate mob 0 around the y axis */
+   	/* rotate mob 0 around the y axis */
       mob0ry += 1.0;
       if (mob0ry > 360.0) mob0ry -= 360.0;
 
-	/* move mob 1 and rotate */
+   	/* move mob 1 and rotate */
       setMobPosition(1, mob1x, mob1y, mob1z, mob1ry);
 
-	/* move mob 1 in the z axis */
-	/* when mob is moving away it is visible, when moving back it */
-	/* is hidden */
+   	/* move mob 1 in the z axis */
+   	/* when mob is moving away it is visible, when moving back it */
+   	/* is hidden */
       if (increasingmob1 == 1) {
          mob1z += 0.2;
          showMob(1);
@@ -337,22 +425,110 @@ void update() {
       if (mob1z > 72) increasingmob1 = 0;
       if (mob1z < 52) increasingmob1 = 1;
 
-	/* rotate mob 1 around the y axis */
+   	/* rotate mob 1 around the y axis */
       mob1ry += 1.0;
       if (mob1ry > 360.0) mob1ry -= 360.0;
-    /* end testworld animation */
+       /* end testworld animation */
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
 
       //Moddig the time that has passed since init() was called, using this as timing for update calls.
       if(timeElapsed % 50 > 40)
          moveProjectiles();
 
-   } else {
+   } 
+   else {
+
+      int i;
+      //Sending the information from the server to the client(s)
+      if(netServer){
+         float s_playerX, s_playerY, s_playerZ;
+         float s_rotY, s_rotX, s_rotZ;
+         char tmpString[MAXBUFFER];
+         //NTS: use sprintf
+       
+         getViewPosition(&s_playerX, &s_playerY, &s_playerZ);
+         getViewOrientation(&s_rotX, &s_rotY, &s_rotZ);
+         
+         sprintf(send_msg, "%.3f", s_playerX);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", s_playerY);
+         strcat(send_msg, tmpString);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", s_playerZ);
+         strcat(send_msg, tmpString);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", fmod(s_rotX, 360.0));
+         strcat(send_msg, tmpString);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", fmod(s_rotY, 360.0));
+         strcat(send_msg, tmpString);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", velocity);
+         strcat(send_msg, tmpString);
+         strcat(send_msg, ",");
+         sprintf(tmpString, "%.3f", angle);
+         strcat(send_msg, tmpString);
+         if(hasFired){
+            strcat(send_msg, ",");
+            strcat(send_msg, "shoot");
+            hasFired = 0;
+         }
+
+         server_nbytes = sendto(server_socket, send_msg, strlen(send_msg), 0, server_p->ai_addr, server_p->ai_addrlen);
+         
+         if(server_nbytes != strlen(send_msg))
+            printf("Entire message was not sent.\n");
+      }
+
+      //Getting the information from the server
+      if(netClient){
+         register int c;
+         float c_playerX, c_playerY, c_playerZ;
+         float c_rotY, c_rotX, c_rotZ = 0;
+         float playerAngle;
+         float playerVelocity;
+         char * ptr; //Variable only here because of strtol
+
+         addr_len = sizeof(server_address);
+
+         client_nbytes = recvfrom(client_socket, recv_msg, MAXBUFFER-1, 0, (struct sockaddr*)&server_address, &addr_len);
+
+         token = strtok(recv_msg, ",");   //PlayerX
+         c_playerX = strtol(token, &ptr, 10);
+
+         token = strtok(NULL, ",");       //PlayerY
+         c_playerY = strtol(token, &ptr, 10);
+
+         token = strtok(NULL, ",");       //PlayerZ
+         c_playerZ = strtol(token, &ptr, 10);
+         
+         token = strtok(NULL, ",");       //rotX
+         c_rotX = strtol(token, &ptr, 10);
+         
+         token = strtok(NULL, ",");       //rotY
+         c_rotY = strtol(token, &ptr, 10);
+
+         token = strtok(NULL, ",");       //Velocity
+         velocity = strtol(token, &ptr, 10);
+
+         token = strtok(NULL, ",");       //Angle
+         angle = strtol(token, &ptr, 10); 
+
+         if((token = strtok(NULL, ",")) != NULL){
+            shoot();
+         }
+
+         setViewPosition(c_playerX, c_playerY, c_playerZ);
+         setViewOrientation(angle, c_rotY, 0.0);
+
+         memset(recv_msg, 0, sizeof(recv_msg));
+      }
+
 
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
 
-      //Moddig the time that has passed since init() was called, using this as timing for update calls.
-      if(timeElapsed % 50 > 30)
+      //Modding the time that has passed since init() was called, using this as timing for update calls.
+      if(timeElapsed % 50 > 20)
          moveProjectiles();
       if(timeElapsed % 1000 > 950)
          genClouds();
@@ -370,6 +546,7 @@ void update() {
 }
 
 void moveClouds(){
+
    register int x, z;
    //Pulling the clouds though the map (checking for y-2 because of artifacts)
    for(x = 0; x < WORLDX; x++){
@@ -389,6 +566,7 @@ void moveClouds(){
 }
 
 void genClouds(){
+
    int z;
    int position = (rand() % WORLDX) + 1;
    int z_pos = (rand() % WORLDZ) + 1;
@@ -408,6 +586,7 @@ void genClouds(){
 //Code from initializeTables and Perlin was taken and modified from
 //http://www.angelcode.com/dev/perlin/perlin.html
 void initializeTables(int SIZE, int * persistence, float * gradientX, float * gradientY){
+
    int i, j;
    
 
@@ -474,6 +653,7 @@ float perlin(float x, float y, int * persistence, float * gradientX, float * gra
 }
 
 void genWorld(){
+ 
    //Seeding for the pseudo-random world
    srand(SEED);
    
@@ -524,10 +704,14 @@ void genWorld(){
          }
       }
    }
+   free(persistence);
+   free(gradientX);
+   free(gradientY);
 }
 
 //Setting all of the values in the struct for a projectile to 0
 void initProjectiles(){
+ 
    int i;
 
    for(i = 0; i < MOB_COUNT; i++){
@@ -547,6 +731,7 @@ void initProjectiles(){
 
 //Finding which quadrent you are facing
 int findQuadrent(float direction){
+ 
    int quad;
 
    if(direction >= 0 && direction < 90)
@@ -565,6 +750,7 @@ int findQuadrent(float direction){
 }
 
 void moveProjectiles(){
+ 
    register int i = 0;
    register int j = 5,k = 0,l = 0;
    float x,y,z;
@@ -596,7 +782,7 @@ void moveProjectiles(){
 
             //Decrementing the y value to get an arc, and setting a cap for the degradation
             if(currProjectile->vel_y > - 5)
-               currProjectile->vel_y -= 0.15;
+               currProjectile->vel_y -= 0.075;
 
             //Checking max and min bounds of the projectile 
             if((currProjectile->x > 0 && currProjectile->x < WORLDX) &&
@@ -642,6 +828,7 @@ void moveProjectiles(){
 }
 
 void shoot(){
+ 
    hasFired = 1;
    float x,y,z,vel_zx;
    float roll,yaw,pitch;
@@ -711,6 +898,10 @@ void shoot(){
 	/*  released */ 
 void mouse(int button, int state, int x, int y) {
 
+   if(netClient){
+      return;
+   }
+
    if (button == GLUT_LEFT_BUTTON){
       if(state == GLUT_DOWN)
          shoot();
@@ -760,6 +951,7 @@ void mouse(int button, int state, int x, int y) {
 
 
 int main(int argc, char** argv){
+
    int i, j, k;
 	/* initialize the graphics system */
    graphicsInit(&argc, argv);
@@ -810,22 +1002,34 @@ int main(int argc, char** argv){
       createPlayer(0, 52.0, 27.0, 52.0, 0.0);
 
    } else {
-      loadTexture();
+      if(netClient){
+         printf("client\n");
+         connectToServer();
+         token = malloc(sizeof(char) * MAXBUFFER);
+
+      }
+      else if(netServer){
+         // send_msg = malloc(sizeof(char) * MAXBUFFER);
+         printf("Server\n");
+         initServer();
+         genClouds();
+      }
       genWorld(); 
-      genClouds();
+
+      // loadTexture();
+   
    }
    initProjectiles();
 
-   if(netClient){
-      printf("client\n");
-   }
-   else if(netServer){
-      printf("server\n");
-   }
+   
 
 
 	/* starts the graphics processing loop */
 	/* code after this will not run until the program exits */
    glutMainLoop();
+   free(token);
+   freeaddrinfo(clients_server_info);
+   freeaddrinfo(host_server_info);
+   
    return 0; 
 }

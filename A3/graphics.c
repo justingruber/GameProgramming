@@ -604,52 +604,62 @@ void keyboard(unsigned char key, int x, int y){
          glutPostRedisplay();
          break;
       case 'w':		// forward motion
-         oldvpx = vpx;
-         oldvpy = vpy;
-         oldvpz = vpz;
-         rotx = (mvx / 180.0 * 3.141592);
-         roty = (mvy / 180.0 * 3.141592);
-         vpx -= sin(roty) * 0.3;
-		// turn off y motion so you can't fly
-         if (flycontrol == 1)
-            vpy += sin(rotx) * 0.3;
-         vpz += cos(roty) * 0.3;
-	 collisionResponse();
-         glutPostRedisplay();
+         if(netServer){
+
+            oldvpx = vpx;
+            oldvpy = vpy;
+            oldvpz = vpz;
+            rotx = (mvx / 180.0 * 3.141592);
+            roty = (mvy / 180.0 * 3.141592);
+            vpx -= sin(roty) * 0.3;
+   		// turn off y motion so you can't fly
+            if (flycontrol == 1)
+               vpy += sin(rotx) * 0.3;
+            vpz += cos(roty) * 0.3;
+         	collisionResponse();
+            glutPostRedisplay();
+         }
          break;
       case 's':		// backward motion
-         oldvpx = vpx;
-         oldvpy = vpy;
-         oldvpz = vpz;
-         rotx = (mvx / 180.0 * 3.141592);
-         roty = (mvy / 180.0 * 3.141592);
-         vpx += sin(roty) * 0.3;
-		// turn off y motion so you can't fly
-         if (flycontrol == 1)
-            vpy -= sin(rotx) * 0.3;
-         vpz -= cos(roty) * 0.3;
-	 collisionResponse();
-         glutPostRedisplay();
+         if(netServer){
+
+            oldvpx = vpx;
+            oldvpy = vpy;
+            oldvpz = vpz;
+            rotx = (mvx / 180.0 * 3.141592);
+            roty = (mvy / 180.0 * 3.141592);
+            vpx += sin(roty) * 0.3;
+   		// turn off y motion so you can't fly
+            if (flycontrol == 1)
+               vpy -= sin(rotx) * 0.3;
+            vpz -= cos(roty) * 0.3;
+   	      collisionResponse();
+            glutPostRedisplay();
+         }
          break;
       case 'a':		// strafe left motion
-         oldvpx = vpx;
-         oldvpy = vpy;
-         oldvpz = vpz;
-         roty = (mvy / 180.0 * 3.141592);
-         vpx += cos(roty) * 0.3;
-         vpz += sin(roty) * 0.3;
-	 collisionResponse();
-         glutPostRedisplay();
+         if(netServer){
+            oldvpx = vpx;
+            oldvpy = vpy;
+            oldvpz = vpz;
+            roty = (mvy / 180.0 * 3.141592);
+            vpx += cos(roty) * 0.3;
+            vpz += sin(roty) * 0.3;
+   	      collisionResponse();
+            glutPostRedisplay();
+         }
          break;
       case 'd':		// strafe right motion
-         oldvpx = vpx;
-         oldvpy = vpy;
-         oldvpz = vpz;
-         roty = (mvy / 180.0 * 3.141592);
-         vpx -= cos(roty) * 0.3;
-         vpz -= sin(roty) * 0.3;
-	 collisionResponse();
-         glutPostRedisplay();
+         if(netServer){
+            oldvpx = vpx;
+            oldvpy = vpy;
+            oldvpz = vpz;
+            roty = (mvy / 180.0 * 3.141592);
+            vpx -= cos(roty) * 0.3;
+            vpz -= sin(roty) * 0.3;
+         	collisionResponse();
+            glutPostRedisplay();
+         }
          break;
       case 'f':		// toggle flying controls
          if (flycontrol == 0) flycontrol = 1;
