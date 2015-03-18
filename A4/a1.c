@@ -18,81 +18,77 @@
 #include <unistd.h>
 #include <netdb.h>
 
-
 #include "graphics.h"
 
-	/* mouse function called by GLUT when a button is pressed or released */
+/* mouse function called by GLUT when a button is pressed or released */
 void mouse(int, int, int, int);
 
-	/* initialize graphics library */
+/* initialize graphics library */
 extern void graphicsInit(int *, char **);
 
-	/* lighting control */
+/* lighting control */
 extern void setLightPosition(GLfloat, GLfloat, GLfloat);
 extern GLfloat* getLightPosition();
 
-	/* viewpoint control */
+/* viewpoint control */
 extern void setViewPosition(float, float, float);
 extern void getViewPosition(float *, float *, float *);
 extern void getOldViewPosition(float *, float *, float *);
 extern void setViewOrientation(float, float, float);
 extern void getViewOrientation(float *, float *, float *);
 
-	/* add cube to display list so it will be drawn */
+/* add cube to display list so it will be drawn */
 extern int addDisplayList(int, int, int);
 
-	/* mob controls */
+/* mob controls */
 extern void createMob(int, float, float, float, float);
 extern void setMobPosition(int, float, float, float, float);
 extern void hideMob(int);
 extern void showMob(int);
 
-	/* player controls */
+/* player controls */
 extern void createPlayer(int, float, float, float, float);
 extern void setPlayerPosition(int, float, float, float, float);
 extern void hidePlayer(int);
 extern void showPlayer(int);
 
-	/* 2D drawing functions */
+/* 2D drawing functions */
 extern void  draw2Dline(int, int, int, int, int);
 extern void  draw2Dbox(int, int, int, int);
 extern void  draw2Dtriangle(int, int, int, int, int, int);
 extern void  set2Dcolour(float []);
 
 
-	/* flag which is set to 1 when flying behaviour is desired */
+/* flag which is set to 1 when flying behaviour is desired */
 extern int flycontrol;
-	/* flag used to indicate that the test world should be used */
+/* flag used to indicate that the test world should be used */
 extern int testWorld;
-	/* flag to print out frames per second */
+/* flag to print out frames per second */
 extern int fps;
-	/* flag to indicate removal of cube the viewer is facing */
-extern int dig;
-	/* flag indicates the program is a client when set = 1 */
+/* flag to indicate the space bar has been pressed */
+extern int space;
+/* flag indicates the program is a client when set = 1 */
 extern int netClient;
-	/* flag indicates the program is a server when set = 1 */
+/* flag indicates the program is a server when set = 1 */
 extern int netServer; 
-	/* size of the window in pixels */
+/* size of the window in pixels */
 extern int screenWidth, screenHeight;
-	/* flag indicates if map is to be printed */
+/* flag indicates if map is to be printed */
 extern int displayMap;
 
-	/* frustum corner coordinates, used for visibility determination  */
+/* frustum corner coordinates, used for visibility determination  */
 extern float corners[4][3];
 
-	/* determine which cubes are visible e.g. in view frustum */
+/* determine which cubes are visible e.g. in view frustum */
 extern void ExtractFrustum();
 extern void tree(float, float, float, float, float, float, int);
-
 
 extern float vpx, vpy, vpz;
 extern float oldvpx, oldvpy, oldvpz;
 extern GLubyte  Image[64][64][4];
 extern GLuint   textureID[1];
 
-
 /********* end of extern variable declarations **************/
-
 
 #define PORT "9734"
 #define MAXBUFFER 255
@@ -108,7 +104,6 @@ typedef struct enemy {
    float en_id;
 
 } en;
-
 
 typedef struct projectile {
    float ang;
@@ -160,14 +155,12 @@ char   s[INET6_ADDRSTRLEN];
 char*  token;
 socklen_t addr_len;
 
-
-
-	/*** collisionResponse() ***/
-	/* -performs collision detection and response */
-	/*  sets new xyz  to position of the viewpoint after collision */
-	/* -can also be used to implement gravity by updating y position of vp*/
-	/* note that the world coordinates returned from getViewPosition()
-	   will be the negative value of the array indices */
+/*** collisionResponse() ***/
+/* -performs collision detection and response */
+/*  sets new xyz  to position of the viewpoint after collision */
+/* -can also be used to implement gravity by updating y position of vp*/
+/* note that the world coordinates returned from getViewPosition()
+   will be the negative value of the array indices */
 void collisionResponse() {
 
    float currx = 0, curry = 0, currz = 0;
@@ -218,15 +211,14 @@ void collisionResponse() {
    return;
 }
 
-
-	/******* draw2D() *******/
-	/* draws 2D shapes on screen */
-	/* use the following functions: 			*/
-	/*	draw2Dline(int, int, int, int, int);		*/
-	/*	draw2Dbox(int, int, int, int);			*/
-	/*	draw2Dtriangle(int, int, int, int, int, int);	*/
-	/*	set2Dcolour(float []); 				*/
-	/* colour must be set before other functions are called	*/
+/******* draw2D() *******/
+/* draws 2D shapes on screen */
+/* use the following functions: 			*/
+/*	draw2Dline(int, int, int, int, int);		*/
+/*	draw2Dbox(int, int, int, int);			*/
+/*	draw2Dtriangle(int, int, int, int, int, int);	*/
+/*	set2Dcolour(float []); 				*/
+/* colour must be set before other functions are called	*/
 void draw2D() {
 
    if (testWorld) {
@@ -333,7 +325,7 @@ void draw2D() {
          //Uncomment the line to draw the white background for the minimap
          draw2Dbox(mapWidthOffset + 2, mapMaxHeight,  mapMaxWidth, screenHeight - 2);
       }
-
+	
    }
 }
 
@@ -380,7 +372,6 @@ void initServer(){
    }
 }
 
-
 /* 
    float  x,  y,  z;
    float rx, ry, rx;
@@ -402,35 +393,35 @@ void updateAI(){
 }
 
 
-
-   /*** update() ***/
-   /* background process, it is called when there are no other events */
-	/* -used to control animations and perform calculations while the  */
-	/*  system is running */
-	/* -gravity must also implemented here, duplicate collisionResponse */
+/*** update() ***/
+/* background process, it is called when there are no other events */
+/* -used to control animations and perform calculations while the  */
+/*  system is running */
+/* -gravity must also implemented here, duplicate collisionResponse */
 void update() {
    int     i, j, k;
    float * la;
+   static  jumpTime = 0;
 
 	/* sample animation for the test world, don't remove this code */
 	/* -demo of animating mobs */
    if (testWorld) {
 
-	  /* sample of rotation and positioning of mob */
-	  /* coordinates for mob 0 */
+	/* sample of rotation and positioning of mob */
+	/* coordinates for mob 0 */
       static float mob0x = 50.0, mob0y = 25.0, mob0z = 52.0;
       static float mob0ry = 0.0;
       static int increasingmob0 = 1;
-	  /* coordinates for mob 1 */
+	/* coordinates for mob 1 */
       static float mob1x = 50.0, mob1y = 25.0, mob1z = 52.0;
       static float mob1ry = 0.0;
       static int increasingmob1 = 1;
 
-	  /* move mob 0 and rotate */
-	  /* set mob 0 position */
+	/* move mob 0 and rotate */
+	/* set mob 0 position */
       setMobPosition(0, mob0x, mob0y, mob0z, mob0ry);
 
-	  /* move mob 0 in the x axis */
+	/* move mob 0 in the x axis */
       if (increasingmob0 == 1)
          mob0x += 0.2;
       else 
@@ -438,16 +429,16 @@ void update() {
       if (mob0x > 50) increasingmob0 = 0;
       if (mob0x < 30) increasingmob0 = 1;
 
-   	/* rotate mob 0 around the y axis */
+	/* rotate mob 0 around the y axis */
       mob0ry += 1.0;
       if (mob0ry > 360.0) mob0ry -= 360.0;
 
-   	/* move mob 1 and rotate */
+	/* move mob 1 and rotate */
       setMobPosition(1, mob1x, mob1y, mob1z, mob1ry);
 
-   	/* move mob 1 in the z axis */
-   	/* when mob is moving away it is visible, when moving back it */
-   	/* is hidden */
+	/* move mob 1 in the z axis */
+	/* when mob is moving away it is visible, when moving back it */
+	/* is hidden */
       if (increasingmob1 == 1) {
          mob1z += 0.2;
          showMob(1);
@@ -458,20 +449,14 @@ void update() {
       if (mob1z > 72) increasingmob1 = 0;
       if (mob1z < 52) increasingmob1 = 1;
 
-   	/* rotate mob 1 around the y axis */
+	/* rotate mob 1 around the y axis */
       mob1ry += 1.0;
       if (mob1ry > 360.0) mob1ry -= 360.0;
-       /* end testworld animation */
-      int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
+    /* end testworld animation */
 
-      //Moddig the time that has passed since init() was called, using this as timing for update calls.
-      if(timeElapsed % 50 > 40)
-         moveProjectiles();
+   } else {
 
-   } 
-   else {
-
-      int i;
+	   int i;
       //Sending the information from the server to the client(s)
       if(netServer){
          float s_playerX, s_playerY, s_playerZ;
@@ -557,7 +542,6 @@ void update() {
          memset(recv_msg, 0, sizeof(recv_msg));
       }
 
-
       int timeElapsed = glutGet(GLUT_ELAPSED_TIME);
 
       //Modding the time that has passed since init() was called, using this as timing for update calls.
@@ -571,7 +555,32 @@ void update() {
       updateAI();
    }
 
-   if(flycontrol == 0 ){
+   if(space){
+
+      float x,y,z;
+      getViewPosition(&x, &y, &z);
+      unsigned int currTime = glutGet(GLUT_ELAPSED_TIME);
+
+      static float height_applied = 0;
+      static unsigned int timePassed = 0;
+      if((currTime - timePassed) > 5000){
+
+         if(height_applied < 2.50){      
+            setViewPosition(x, y - 0.75, z);
+            height_applied += 0.5;
+         }
+         else{
+            space = !space;
+            height_applied = 0;
+            timePassed = currTime;
+         }
+      }
+      else{
+         space = !space;
+      }
+   }
+
+   if(flycontrol){
       float x,y,z;
       getViewPosition(&x, &y, &z);
       if(world[abs((int)x)][abs((int)y)-1][abs((int)z)] == 0){
@@ -928,12 +937,11 @@ void shoot(){
    }while(i < MOB_COUNT);
 }
 
-
-	/* called by GLUT when a mouse button is pressed or released */
-	/* -button indicates which button was pressed or released */
-	/* -state indicates a button down or button up event */
-	/* -x,y are the screen coordinates when the mouse is pressed or */
-	/*  released */ 
+/* called by GLUT when a mouse button is pressed or released */
+/* -button indicates which button was pressed or released */
+/* -state indicates a button down or button up event */
+/* -x,y are the screen coordinates when the mouse is pressed or */
+/*  released */ 
 void mouse(int button, int state, int x, int y) {
 
    if(netClient){
@@ -987,9 +995,7 @@ void mouse(int button, int state, int x, int y) {
 }
 
 
-
-int main(int argc, char** argv){
-
+int main(int argc, char** argv) {
    int i, j, k;
 	/* initialize the graphics system */
    graphicsInit(&argc, argv);
@@ -1040,6 +1046,7 @@ int main(int argc, char** argv){
       createPlayer(0, 52.0, 27.0, 52.0, 0.0);
 
    } else {
+
       if(netClient){
          printf("client\n");
          connectToServer();
@@ -1051,15 +1058,13 @@ int main(int argc, char** argv){
          initServer();
          genClouds();
       }
-      // genWorld(); 
+      genWorld();
 
-      loadTexture();
+      // loadTexture();
    }
+
    initProjectiles();
    initAI();
-
-   
-
 
 	/* starts the graphics processing loop */
 	/* code after this will not run until the program exits */
@@ -1068,6 +1073,5 @@ int main(int argc, char** argv){
    freeaddrinfo(clients_server_info);
    freeaddrinfo(host_server_info);
    free(enemy);
-
    return 0; 
 }
